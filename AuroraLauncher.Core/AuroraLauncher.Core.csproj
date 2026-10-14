@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AuroraLauncher.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+  <!-- Keep the corrected top-level Mods implementation. An older duplicate
+       implementation under Core\Mods.cs caused duplicate type errors. -->
+  <ItemGroup>
+    <Compile Remove="Core\Mods.cs" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,467 @@
+using System.Diagnostics;
+using System.Text.Json;
+using AuroraLauncher.Core;
+using Microsoft.UI;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Windows.System;
+using Windows.UI;
+
+namespace AuroraLauncher;
+
+public sealed partial class MainWindow : Window
+{
+    private readonly List<Instance> _instances = Instances.LoadAll();
+    private readonly List<JavaInfo> _java = new();
+    private Instance? _selected;
+    private bool _initializing = true;
+    private CancellationTokenSource? _operation;
+    private TextBlock? _statusText;
+    private ProgressBar? _progressBar;
+
+    private static readonly SolidColorBrush Surface = Brush(0xFF1A2225);
+    private static readonly SolidColorBrush Surface2 = Brush(0xFF222D30);
+    private static readonly SolidColorBrush Muted = Brush(0xFF9BAEAA);
+    private static readonly SolidColorBrush Accent = Brush(0xFF91F2C1);
+
+    public MainWindow()
+    {
+        InitializeComponent();
+        Title = "Aurora Launcher";
+        ExtendsContentIntoTitleBar = false;
+        _selected = _instances.FirstOrDefault();
+        _initializing = false;
+        ShowHome();
+    }
+
+    private static SolidColorBrush Brush(uint argb) => new(Color.FromArgb(
+        (byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb));
+
+    private void Navigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        // The XAML-declared initial selection can raise this event before InitializeComponent
+        // has assigned every x:Name field. Render the first page after construction instead.
+        if (_initializing || PageHost is null || PageTitle is null || PageSubtitle is null) return;
+        if (args.SelectedItem is not NavigationViewItem item) return;
+        switch (item.Tag?.ToString())
+        {
+            case "home": PageTitle.Text = "Главная"; PageSubtitle.Text = "Твои миры начинаются здесь"; ShowHome(); break;
+            case "versions": PageTitle.Text = "Сборки"; PageSubtitle.Text = "Создавай отдельные установки Minecraft"; ShowVersions(); break;
+            case "mods": PageTitle.Text = "Библиотека модов"; PageSubtitle.Text = "Ищи и устанавливай моды в выбранную сборку"; ShowMods(); break;
+            case "java": PageTitle.Text = "Java"; PageSubtitle.Text = "Управляй Java или найди её на компьютере"; ShowJava(); break;
+            case "settings": PageTitle.Text = "Настройки"; PageSubtitle.Text = "Параметры игры и подключений"; ShowSettings(); break;
+        }
+    }
+
+    private void SetPage(UIElement content)
+    {
+        PageHost.Children.Clear();
+        var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = content };
+        PageHost.Children.Add(scroll);
+    }
+
+    private StackPanel PageStack(double spacing = 18) => new() { Spacing = spacing, MaxWidth = 1120, HorizontalAlignment = HorizontalAlignment.Left };
+
+    private Border Card(UIElement content, Thickness? padding = null) => new()
+    {
+        Background = Surface, BorderBrush = Brush(0xFF2A3739), BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(16), Padding = padding ?? new Thickness(22), Child = content
+    };
+
+    private TextBlock Text(string value, double size = 14, bool bold = false, SolidColorBrush? color = null) => new()
+    {
+        Text = value, FontSize = size, FontWeight = bold ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal,
+        Foreground = color ?? Brush(0xFFEAF3EF)
+    };
+
+    private Button Button(string label, RoutedEventHandler action, bool primary = false)
+    {
+        var b = new Button { Content = label, Padding = new Thickness(18, 10, 18, 10), CornerRadius = new CornerRadius(9),
+            Background = primary ? Accent : Surface2, Foreground = primary ? Brush(0xFF122019) : Brush(0xFFEAF3EF),
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Left };
+        b.Click += action;
+        return b;
+    }
+
+    private TextBox Input(string placeholder, string value = "", double width = 280) => new()
+    { PlaceholderText = placeholder, Text = value, Width = width, MinHeight = 42, Padding = new Thickness(12, 8, 12, 8) };
+
+    private static StackPanel Row(params UIElement[] children)
+    {
+        var p = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, VerticalAlignment = VerticalAlignment.Center };
+        foreach (var child in children) p.Children.Add(child);
+        return p;
+    }
+
+    private void ShowHome()
+    {
+        var root = PageStack();
+        var hero = new Grid { MinHeight = 210, Padding = new Thickness(28), Background = Brush(0xFF20352F), CornerRadius = new CornerRadius(20) };
+        var heroText = new StackPanel { Spacing = 10, VerticalAlignment = VerticalAlignment.Center };
+        heroText.Children.Add(Text("AURORA  /  MINECRAFT", 12, true, Accent));
+        heroText.Children.Add(Text("Время играть.", 34, true));
+        heroText.Children.Add(Text(_selected?.Subtitle ?? "Создай сборку или выбери существующую, чтобы начать.", 15, false, Muted));
+        heroText.Children.Add(Row(Button("▶  ИГРАТЬ", async (_, _) => await PlaySelectedAsync(), true),
+            Button("＋  Новая сборка", (_, _) => Navigation.SelectedItem = Navigation.MenuItems.OfType<NavigationViewItem>().First(i => Equals(i.Tag, "versions")))));
+        hero.Children.Add(heroText);
+        root.Children.Add(hero);
+
+        root.Children.Add(Text("ТВОИ СБОРКИ", 12, true, Muted));
+        if (_instances.Count == 0)
+        {
+            var empty = new StackPanel { Spacing = 10 };
+            empty.Children.Add(Text("Пока здесь пусто", 20, true));
+            empty.Children.Add(Text("Создай сборку Minecraft. Лаунчер установит файлы игры и нужные библиотеки.", 14, false, Muted));
+            empty.Children.Add(Button("Создать первую сборку", (_, _) => Navigation.SelectedItem = Navigation.MenuItems.OfType<NavigationViewItem>().First(i => Equals(i.Tag, "versions")), true));
+            root.Children.Add(Card(empty));
+        }
+        else
+        {
+            var list = new StackPanel { Spacing = 10 };
+            foreach (var instance in _instances)
+            {
+                var name = Text($"{instance.Icon}   {instance.Name}", 17, true);
+                var sub = Text(instance.Subtitle, 13, false, Muted);
+                var choose = Button(_selected == instance ? "Выбрана" : "Выбрать", (_, _) => { _selected = instance; ShowHome(); }, _selected == instance);
+                list.Children.Add(Card(Row(new StackPanel { Spacing = 5, Children = { name, sub }, Width = 460 }, choose), new Thickness(18)));
+            }
+            root.Children.Add(list);
+        }
+        root.Children.Add(BuildStatus());
+        SetPage(root);
+    }
+
+    private void ShowVersions()
+    {
+        var root = PageStack();
+        var form = new StackPanel { Spacing = 16 };
+        form.Children.Add(Text("Новая сборка", 22, true));
+        form.Children.Add(Text("Каждая сборка хранит свои моды, настройки и игровые файлы отдельно.", 14, false, Muted));
+        var name = Input("Например, Survival 1.21", "Minecraft " + DateTime.Now.ToString("MMdd"), 380);
+        var mc = new ComboBox { Width = 250, PlaceholderText = "Версия игры", MinHeight = 42 };
+        var loader = new ComboBox { Width = 200, MinHeight = 42, ItemsSource = Loaders.Supported.Select(x => x.Title).ToList(), SelectedIndex = 0 };
+        var loaderVersion = new ComboBox { Width = 220, MinHeight = 42, PlaceholderText = "Последняя версия" };
+        loaderVersion.Items.Add("Последняя совместимая"); loaderVersion.SelectedIndex = 0;
+        var versionsLoading = Text("Загружаю версии Minecraft…", 13, false, Muted);
+        var progress = new ProgressBar { IsIndeterminate = true, Width = 260 };
+        var create = Button("Установить сборку", async (_, _) =>
+        {
+            if (mc.SelectedItem is not string mcVersion) { await AlertAsync("Выбери версию Minecraft."); return; }
+            var selectedLoader = Loaders.Supported[Math.Max(0, loader.SelectedIndex)];
+            var loaderVer = loaderVersion.SelectedIndex > 0 ? loaderVersion.SelectedItem?.ToString() ?? "" : "";
+            var instance = new Instance { Name = SafeInstanceName(name.Text), McVersion = mcVersion, Loader = selectedLoader.Id, LoaderVersion = loaderVer };
+            if (_instances.Any(i => i.Name.Equals(instance.Name, StringComparison.OrdinalIgnoreCase)))
+            { await AlertAsync("Сборка с таким именем уже существует."); return; }
+            await RunAsync($"Устанавливаю {instance.Subtitle}", async ct =>
+            {
+                var p = new Progress<ProgressReport>(UpdateProgress);
+                await Instances.PrepareAsync(instance, p, ct);
+                _instances.Insert(0, instance); _selected = instance; Instances.SaveAll(_instances);
+                await DispatcherQueue.EnqueueAsync(() => { ShowHome(); return Task.CompletedTask; });
+            });
+        }, true);
+        async Task RefreshLoaderVersionsAsync()
+        {
+            loaderVersion.Items.Clear(); loaderVersion.Items.Add("Последняя совместимая"); loaderVersion.SelectedIndex = 0;
+            if (mc.SelectedItem is not string mcVersion) return;
+            var kind = Loaders.Supported[Math.Max(0, loader.SelectedIndex)].Id;
+            if (kind == "vanilla") return;
+            try
+            {
+                var versions = kind switch
+                {
+                    "fabric" => await Loaders.FabricVersionsForAsync(mcVersion, CancellationToken.None),
+                    "forge" => await Loaders.ForgePromosAsync(mcVersion, CancellationToken.None),
+                    "neoforge" => await Loaders.NeoForgeVersionsForAsync(mcVersion, CancellationToken.None),
+                    _ => new List<string>()
+                };
+                foreach (var version in versions) loaderVersion.Items.Add(version);
+            }
+            catch { }
+        }
+        loader.SelectionChanged += async (_, _) => await RefreshLoaderVersionsAsync();
+        mc.SelectionChanged += async (_, _) => await RefreshLoaderVersionsAsync();
+        var fields = new StackPanel { Spacing = 10 };
+        fields.Children.Add(Text("Имя сборки", 13, true, Muted)); fields.Children.Add(name);
+        fields.Children.Add(Text("Версия Minecraft", 13, true, Muted)); fields.Children.Add(mc);
+        fields.Children.Add(Text("Загрузчик", 13, true, Muted)); fields.Children.Add(Row(loader, loaderVersion));
+        fields.Children.Add(versionsLoading); fields.Children.Add(progress); fields.Children.Add(create);
+        form.Children.Add(fields);
+        root.Children.Add(Card(form, new Thickness(26)));
+        root.Children.Add(BuildStatus());
+        SetPage(root);
+        _ = LoadMinecraftVersionsAsync(mc, versionsLoading, progress);
+    }
+
+    private static string SafeInstanceName(string name)
+    {
+        var value = string.Concat(name.Trim().Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+        return string.IsNullOrWhiteSpace(value) ? "Minecraft" : value.Length > 50 ? value[..50] : value;
+    }
+
+    private async Task LoadMinecraftVersionsAsync(ComboBox combo, TextBlock label, ProgressBar progress)
+    {
+        try
+        {
+            var manifest = await Mojang.GetManifestAsync(ct: CancellationToken.None);
+            var versions = manifest.Arr("versions").Where(v => v.Str("type") is "release" or "snapshot")
+                .Select(v => v.Str("id")!).Where(v => !string.IsNullOrEmpty(v)).ToList();
+            combo.ItemsSource = versions;
+            combo.SelectedItem = versions.FirstOrDefault(v => v.StartsWith("1.")) ?? versions.FirstOrDefault();
+            label.Text = $"Загружено версий: {versions.Count}";
+            progress.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception ex) { label.Text = "Не удалось получить список версий: " + ex.Message; progress.Visibility = Visibility.Collapsed; }
+    }
+
+    private void ShowMods()
+    {
+        var root = PageStack();
+        if (_selected == null)
+        {
+            root.Children.Add(Card(new StackPanel { Spacing = 8, Children = { Text("Сначала создай сборку", 20, true), Text("Каталог модов фильтрует файлы под выбранную игру и загрузчик.", 14, false, Muted) } }));
+            SetPage(root); return;
+        }
+        var header = new StackPanel { Spacing = 5 };
+        header.Children.Add(Text("Установка для " + _selected.Name, 20, true));
+        header.Children.Add(Text(_selected.Subtitle, 14, false, Muted));
+        root.Children.Add(Card(header));
+        var search = Input("Название мода", "", 330);
+        var source = new ComboBox { Width = 180, MinHeight = 42, ItemsSource = new[] { "Modrinth", "CurseForge" }, SelectedIndex = 0 };
+        var results = new StackPanel { Spacing = 10 };
+        var installed = new StackPanel { Spacing = 8 };
+        var searchButton = Button("Найти моды", async (_, _) => await SearchModsAsync(search.Text, source.SelectedIndex == 1, results), true);
+        if (_selected.Loader == "vanilla")
+        {
+            searchButton.IsEnabled = false;
+            results.Children.Add(Text("Для модов выбери сборку с Fabric, Forge или NeoForge.", 13, false, Muted));
+        }
+        root.Children.Add(Card(new StackPanel { Spacing = 12, Children = { Row(search, source, searchButton), results } }));
+        var installedHeader = Text("УСТАНОВЛЕНО", 12, true, Muted);
+        var refresh = Button("Обновить", (_, _) => RenderInstalled(installed));
+        root.Children.Add(Row(installedHeader, refresh));
+        root.Children.Add(installed);
+        SetPage(root);
+        RenderInstalled(installed);
+    }
+
+    private async Task SearchModsAsync(string query, bool curseForge, StackPanel results)
+    {
+        if (_selected == null) return;
+        results.Children.Clear(); results.Children.Add(Text("Ищу совместимые моды…", 14, false, Muted));
+        try
+        {
+            var hits = curseForge
+                ? await Mods.SearchCurseForgeAsync(Ctx.Settings.CurseApiKey, query.Trim(), _selected.McVersion, CancellationToken.None)
+                : await Mods.SearchModrinthAsync(query.Trim(), _selected.McVersion, _selected.Loader == "vanilla" ? null : _selected.Loader, CancellationToken.None);
+            results.Children.Clear();
+            if (hits.Count == 0) { results.Children.Add(Text("Ничего не найдено для этой игры и загрузчика.", 14, false, Muted)); return; }
+            foreach (var hit in hits)
+            {
+                var details = new StackPanel { Spacing = 4, Width = 600 };
+                details.Children.Add(Text(hit.Title, 16, true));
+                details.Children.Add(Text($"{hit.Source} · {hit.Author} · {hit.Downloads} загрузок", 12, false, Muted));
+                details.Children.Add(Text(hit.Description, 13, false, Muted));
+                var button = Button("Установить", async (_, _) =>
+                {
+                    if (_selected == null) return;
+                    await RunAsync("Устанавливаю мод " + hit.Title, async ct =>
+                    {
+                        var file = await Mods.InstallAsync(hit.Id, _selected, ct);
+                        await DispatcherQueue.EnqueueAsync(() => { results.Children.Add(Text("Установлен: " + file, 13, true, Accent)); return Task.CompletedTask; });
+                    });
+                }, true);
+                results.Children.Add(Card(Row(details, button), new Thickness(16)));
+            }
+        }
+        catch (Exception ex) { results.Children.Clear(); results.Children.Add(Text("Ошибка поиска: " + ex.Message, 14, false, Brush(0xFFFF9A9A))); }
+    }
+
+    private void RenderInstalled(StackPanel panel)
+    {
+        panel.Children.Clear();
+        if (_selected == null) return;
+        var files = Mods.Installed(_selected);
+        if (files.Count == 0) { panel.Children.Add(Text("В этой сборке пока нет модов.", 14, false, Muted)); return; }
+        foreach (var file in files)
+        {
+            var remove = Button("Удалить", (_, _) => { Mods.Delete(_selected, file); RenderInstalled(panel); });
+            panel.Children.Add(Card(Row(Text("◈  " + file, 14, true), remove), new Thickness(12)));
+        }
+    }
+
+    private void ShowJava()
+    {
+        var root = PageStack();
+        var list = new StackPanel { Spacing = 9 };
+        var status = Text("Быстрый поиск проверяет JAVA_HOME, PATH, реестр и стандартные папки.", 14, false, Muted);
+        root.Children.Add(Card(new StackPanel { Spacing = 12, Children =
+        {
+            Text("Поиск установок Java", 20, true), status,
+            Row(Button("Быстрое сканирование", async (_, _) => await ScanJavaAsync(false, status, list), true),
+                Button("Глубоко просканировать диски", async (_, _) => await ScanJavaAsync(true, status, list)))
+        }}));
+        root.Children.Add(list);
+        SetPage(root);
+        _ = ScanJavaAsync(false, status, list);
+    }
+
+    private async Task ScanJavaAsync(bool deep, TextBlock status, StackPanel list)
+    {
+        list.Children.Clear(); status.Text = deep ? "Сканирование дисков… это может занять несколько минут." : "Быстрый поиск…";
+        var progress = new Progress<string>(s => status.Text = s);
+        try
+        {
+            var found = await JavaScan.ScanAsync(deep, progress, CancellationToken.None);
+            _java.Clear(); _java.AddRange(found); list.Children.Clear();
+            foreach (var java in found)
+            {
+                var detail = new StackPanel { Spacing = 4, Width = 650 };
+                detail.Children.Add(Text(java.Display + (java.Vendor.Length > 0 ? " · " + java.Vendor : ""), 16, true));
+                detail.Children.Add(Text(java.ExePath, 12, false, Muted));
+                detail.Children.Add(Text("Источник: " + java.Source, 12, false, Muted));
+                list.Children.Add(Card(Row(detail, Button("Использовать", (_, _) =>
+                {
+                    Ctx.Settings.JavaPath = java.ExePath; Ctx.SaveSettings(); status.Text = "Будет использоваться " + java.Display;
+                }, Ctx.Settings.JavaPath == java.ExePath)), new Thickness(14)));
+            }
+            if (found.Count == 0) list.Children.Add(Text("Java не найдена. При первом запуске игра скачает подходящую Java от Mojang.", 14, false, Muted));
+        }
+        catch (Exception ex) { status.Text = "Ошибка поиска: " + ex.Message; }
+    }
+
+    private void ShowSettings()
+    {
+        var root = PageStack();
+        var account = new StackPanel { Spacing = 12 };
+        account.Children.Add(Text("Аккаунт Minecraft", 20, true));
+        account.Children.Add(Text(Ctx.Account == null ? "Не выполнен вход" : "Вошли как " + Ctx.Account.Username, 14, false, Muted));
+        account.Children.Add(Row(Button(Ctx.Account == null ? "Войти через Microsoft" : "Обновить вход", async (_, _) => await LoginAsync(), true),
+            Button("Выйти", (_, _) => { Accounts.Delete(); Ctx.Account = null; ShowSettings(); })));
+        root.Children.Add(Card(account));
+
+        var ram = Input("Память в МБ", Ctx.Settings.RamMb.ToString(), 160);
+        var curse = Input("Ключ CurseForge API", Ctx.Settings.CurseApiKey, 500);
+        var java = Input("Путь к javaw.exe (пусто — автоматический)", Ctx.Settings.JavaPath, 600);
+        var client = Input("Microsoft Client ID (пусто — встроенный)", Ctx.Settings.MsClientId, 500);
+        var save = Button("Сохранить настройки", async (_, _) =>
+        {
+            if (!int.TryParse(ram.Text, out var mem) || mem < 1024 || mem > 65536) { await AlertAsync("Укажи объём памяти от 1024 до 65536 МБ."); return; }
+            if (java.Text.Length > 0 && !File.Exists(java.Text)) { await AlertAsync("Файл Java по указанному пути не найден."); return; }
+            Ctx.Settings.RamMb = mem; Ctx.Settings.CurseApiKey = curse.Text.Trim(); Ctx.Settings.JavaPath = java.Text.Trim(); Ctx.Settings.MsClientId = client.Text.Trim(); Ctx.SaveSettings();
+            await AlertAsync("Настройки сохранены.");
+        }, true);
+        var settings = new StackPanel { Spacing = 11 };
+        settings.Children.Add(Text("Игра и каталог модов", 20, true));
+        settings.Children.Add(Text("CurseForge требует бесплатный API-ключ. Для поиска на Modrinth ключ не нужен.", 13, false, Muted));
+        settings.Children.Add(Text("Память игры (МБ)", 13, true, Muted)); settings.Children.Add(ram);
+        settings.Children.Add(Text("CurseForge API key", 13, true, Muted)); settings.Children.Add(curse);
+        settings.Children.Add(Text("Java", 13, true, Muted)); settings.Children.Add(java);
+        settings.Children.Add(Text("Microsoft Client ID", 13, true, Muted)); settings.Children.Add(client);
+        settings.Children.Add(save);
+        root.Children.Add(Card(settings));
+        root.Children.Add(Card(new StackPanel { Spacing = 5, Children = { Text("Хранилище", 18, true), Text(Paths.Root, 13, false, Muted) } }));
+        SetPage(root);
+    }
+
+    private async Task LoginAsync()
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource();
+            var code = await Auth.BeginDeviceLoginAsync(cts.Token);
+            await Launcher.LaunchUriAsync(new Uri(code.VerificationUriComplete ?? code.VerificationUri));
+            var dialog = new ContentDialog
+            {
+                XamlRoot = Content.XamlRoot,
+                Title = "Вход через Microsoft",
+                Content = new StackPanel { Spacing = 10, Children =
+                {
+                    Text("Открыл страницу Microsoft. Введи одноразовый код:", 14),
+                    new TextBlock { Text = code.UserCode, FontSize = 30, FontWeight = Microsoft.UI.Text.FontWeights.Bold, CharacterSpacing = 120, IsTextSelectionEnabled = true },
+                    Text(code.VerificationUri, 13, false, Muted),
+                    Text("Пароль вводится только на сайте Microsoft.", 12, false, Muted)
+                }},
+                PrimaryButtonText = "Я подтвердил вход", CloseButtonText = "Отмена", DefaultButton = ContentDialogButton.Primary
+            };
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+            await RunAsync("Завершаю вход…", async ct =>
+            {
+                var ms = await Auth.PollDeviceTokenAsync(code, ct);
+                Ctx.Account = await Auth.LoginAsync(ms, ct);
+                await DispatcherQueue.EnqueueAsync(() => { ShowSettings(); return Task.CompletedTask; });
+            });
+        }
+        catch (Exception ex) { await AlertAsync("Не удалось войти: " + ex.Message); }
+    }
+
+    private async Task PlaySelectedAsync()
+    {
+        if (_selected == null) { await AlertAsync("Сначала создай сборку Minecraft."); return; }
+        if (Ctx.Account == null) { await AlertAsync("Сначала выполни вход через Microsoft в настройках."); return; }
+        await RunAsync("Подготавливаю игру…", async ct =>
+        {
+            var process = await GameLauncher.LaunchAsync(_selected, new Progress<ProgressReport>(UpdateProgress), ct);
+            await DispatcherQueue.EnqueueAsync(() => { if (_statusText != null) _statusText.Text = $"Minecraft запущен · процесс {process.Id}"; return Task.CompletedTask; });
+        });
+    }
+
+    private UIElement BuildStatus()
+    {
+        var panel = new StackPanel { Spacing = 8 };
+        _statusText = Text("Готово", 13, false, Muted);
+        _progressBar = new ProgressBar { Minimum = 0, Maximum = 100, Value = 0, Visibility = Visibility.Collapsed, Height = 6 };
+        panel.Children.Add(_statusText); panel.Children.Add(_progressBar);
+        return Card(panel, new Thickness(16));
+    }
+
+    private void UpdateProgress(ProgressReport p)
+    {
+        _ = DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_statusText != null) _statusText.Text = string.IsNullOrWhiteSpace(p.Detail) ? p.Phase : $"{p.Phase} · {p.Detail}";
+            if (_progressBar != null)
+            {
+                _progressBar.Visibility = Visibility.Visible;
+                _progressBar.IsIndeterminate = p.Percent < 0;
+                if (p.Percent >= 0) _progressBar.Value = p.Percent;
+            }
+        });
+    }
+
+    private async Task RunAsync(string label, Func<CancellationToken, Task> action)
+    {
+        _operation?.Cancel(); _operation = new CancellationTokenSource();
+        if (_statusText != null) _statusText.Text = label;
+        if (_progressBar != null) { _progressBar.Visibility = Visibility.Visible; _progressBar.IsIndeterminate = true; }
+        try
+        {
+            await action(_operation.Token);
+            if (_statusText != null) _statusText.Text = "Готово";
+        }
+        catch (OperationCanceledException) { if (_statusText != null) _statusText.Text = "Операция отменена"; }
+        catch (Exception ex) { if (_statusText != null) _statusText.Text = "Ошибка: " + ex.Message; Ctx.Log("Ошибка: " + ex); await AlertAsync(ex.Message); }
+        finally { if (_progressBar != null) { _progressBar.IsIndeterminate = false; _progressBar.Visibility = Visibility.Collapsed; } }
+    }
+
+    private async Task AlertAsync(string message)
+    {
+        var dialog = new ContentDialog { XamlRoot = Content.XamlRoot, Title = "Aurora Launcher", Content = message, CloseButtonText = "Закрыть" };
+        await dialog.ShowAsync();
+    }
+}
+
+internal static class DispatcherQueueExtensions
+{
+    public static Task EnqueueAsync(this Microsoft.UI.Dispatching.DispatcherQueue queue, Func<Task> action)
+    {
+        var tcs = new TaskCompletionSource();
+        if (!queue.TryEnqueue(async () =>
+        {
+            try { await action(); tcs.SetResult(); }
+            catch (Exception ex) { tcs.SetException(ex); }
+        })) tcs.SetException(new InvalidOperationException("Не удалось обновить интерфейс."));
+        return tcs.Task;
+    }
+}

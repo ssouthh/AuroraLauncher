@@ -1,0 +1,12 @@
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\bin\Release\net8.0\AuroraLauncher.Core.deps.json
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\bin\Release\net8.0\AuroraLauncher.Core.dll
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\bin\Release\net8.0\AuroraLauncher.Core.pdb
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\obj\Release\net8.0\AuroraLauncher.Core.csproj.AssemblyReference.cache
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\obj\Release\net8.0\AuroraLauncher.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\obj\Release\net8.0\AuroraLauncher.Core.AssemblyInfoInputs.cache
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\obj\Release\net8.0\AuroraLauncher.Core.AssemblyInfo.cs
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\obj\Release\net8.0\AuroraLauncher.Core.csproj.CoreCompileInputs.cache
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\obj\Release\net8.0\AuroraLauncher.Core.dll
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\obj\Release\net8.0\refint\AuroraLauncher.Core.dll
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\obj\Release\net8.0\AuroraLauncher.Core.pdb
+C:\Users\bookxr\Desktop\mc\AuroraLauncher\AuroraLauncher.Core\obj\Release\net8.0\ref\AuroraLauncher.Core.dll

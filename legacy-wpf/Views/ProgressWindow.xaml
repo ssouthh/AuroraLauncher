@@ -1,0 +1,13 @@
+<Window x:Class="AuroraLauncher.Views.ProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Aurora Launcher" Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" WindowStyle="ToolWindow">
+    <StackPanel Margin="18">
+        <TextBlock x:Name="PhaseText" Text="Подготовка…" FontSize="15" FontWeight="SemiBold"/>
+        <TextBlock x:Name="DetailText" Text="" Foreground="{StaticResource Muted}" Margin="0,4,0,10" TextTrimming="CharacterEllipsis"/>
+        <ProgressBar x:Name="Bar" Height="10" Minimum="0" Maximum="100"/>
+        <Button x:Name="CancelBtn" Content="Отмена" Style="{StaticResource GhostBtn}" Margin="0,14,0,0"
+                HorizontalAlignment="Right" Click="Cancel_Click"/>
+    </StackPanel>
+</Window>

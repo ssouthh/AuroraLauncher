@@ -1,0 +1,21 @@
+<Window x:Class="AuroraLauncher.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Вход через Microsoft" Width="440" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" WindowStyle="ToolWindow">
+    <StackPanel Margin="18">
+        <TextBlock Text="Вход в аккаунт Microsoft" FontSize="16" FontWeight="SemiBold"/>
+        <TextBlock Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,12"
+                   Text="1. Нажмите «Открыть страницу» — откроется сайт Microsoft.&#10;2. Введите код подтверждения и войдите.&#10;3. Окно закроется само после входа."/>
+        <Border Background="{StaticResource Card}" CornerRadius="10" Padding="16" HorizontalAlignment="Center">
+            <TextBlock x:Name="CodeText" Text="·······" FontSize="30" FontWeight="Bold"
+                       FontFamily="Consolas" Foreground="{StaticResource Accent2}"/>
+        </Border>
+        <TextBlock x:Name="StatusText" Text="Ожидание входа…" Foreground="{StaticResource Muted}" Margin="0,12,0,0"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button x:Name="OpenBtn" Content="Открыть страницу" Style="{StaticResource PrimaryBtn}" Click="Open_Click"/>
+            <Button Content="Копировать код" Style="{StaticResource GhostBtn}" Margin="8,0,0,0" Click="Copy_Click"/>
+            <Button Content="Отмена" Style="{StaticResource GhostBtn}" Margin="8,0,0,0" Click="Cancel_Click"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
