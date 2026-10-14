@@ -1,6 +1,6 @@
 # English
 
-# Aurora Launcher
+## Aurora Launcher
 
 A personal Minecraft launcher for Windows built with WinUI 3. The UI project is located in `AuroraLauncher.WinUI`, while game services and APIs are in `AuroraLauncher.Core`.
 
@@ -42,7 +42,7 @@ CurseForge requires a valid CurseForge API key. Vanilla versions and mod loader 
 
 # Russian
 
-# Aurora Launcher
+## Aurora Launcher
 
 Персональный лаунчер Minecraft для Windows на WinUI 3. UI-проект находится в `AuroraLauncher.WinUI`, игровые службы и API — в `AuroraLauncher.Core`.
 
