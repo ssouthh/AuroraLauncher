@@ -1,4 +1,4 @@
-** English **
+# English
 
 # Aurora Launcher
 
@@ -40,7 +40,7 @@ CurseForge requires a valid CurseForge API key. Vanilla versions and mod loader 
 - Individual mod installation is supported. Importing CurseForge or Modrinth modpacks is not yet implemented.
 - Forge and NeoForge installation depends on the availability of an official installer for the specific Minecraft version.
 
-** Russian **
+# Russian
 
 # Aurora Launcher
 
