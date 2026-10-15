@@ -6,11 +6,18 @@ namespace AuroraLauncher.Core;
 /// <summary>Запуск игры: сборка classpath и аргументов из json версии, старт JVM.</summary>
 public static class GameLauncher
 {
+    public static event Action<CrashReportInfo, Instance>? GameCrashed;
+
     public static async Task<Process> LaunchAsync(Instance inst, IProgress<ProgressReport> prog, CancellationToken ct)
     {
         prog.Report(new ProgressReport { Phase = "Токен Minecraft", Percent = 5 });
         var mcToken = await Auth.EnsureFreshMcTokenAsync(ct);
         var account = Ctx.Account!;
+
+        if (account.IsOffline || string.IsNullOrWhiteSpace(mcToken) || mcToken == "0")
+        {
+            throw new InvalidOperationException("Запуск игры отклонён: обнаружен неподтверждённый профиль. Для запуска требуется официальная лицензия Minecraft Java Edition и авторизация через Microsoft.");
+        }
 
         var versionsRoot = Path.Combine(LauncherLayout.SharedRoot, "versions");
         var spec = new VersionSpec { McVersion = inst.McVersion, Loader = inst.Loader, LoaderVersion = inst.LoaderVersion };
@@ -27,9 +34,16 @@ public static class GameLauncher
         var vj = JsonExt.ParseFile(vFile);
 
         prog.Report(new ProgressReport { Phase = "Java", Percent = 45 });
-        var java = Ctx.Settings.JavaPath is { Length: > 0 } p && File.Exists(p)
-            ? p
-            : await Runtimes.GetJavaForVersionAsync(await VanillaJsonFor(vj, versionsRoot), prog.Slice(45, 70), ct);
+        var vanillaJson = await VanillaJsonFor(vj, versionsRoot);
+        var requiredMajor = Runtimes.DetectRequiredJavaMajor(inst, vanillaJson);
+        var java = await Runtimes.GetJavaForInstanceAsync(inst, vanillaJson, prog.Slice(45, 70), ct);
+
+        var actualMajor = await Runtimes.ProbeMajorAsync(java, ct);
+        if (actualMajor != null && actualMajor < requiredMajor)
+        {
+            Ctx.Log($"[GameLauncher] Выбранная Java {actualMajor} ниже требуемой Java {requiredMajor}! Загрузка/подбор гарантированной Java {requiredMajor}...");
+            java = await Runtimes.EnsureJavaMajorAsync(requiredMajor, prog.Slice(45, 70), ct);
+        }
 
         var instVersions = Path.Combine(inst.Dir, "versions");
         Directory.CreateDirectory(Path.Combine(instVersions, id));
@@ -39,7 +53,21 @@ public static class GameLauncher
 
         prog.Report(new ProgressReport { Phase = "Проверка файлов", Percent = 70 });
         var libsRoot = Path.Combine(LauncherLayout.SharedRoot, "libraries");
-        var missing = Mojang.CollectLibraries(vj)
+
+        // Объединяем библиотеки ванильной версии Minecraft (SLF4J, Log4j, Netty, Guava и т.д.) и загрузчика (Fabric/Forge)
+        bool isModded = vj.Str("id") != vanillaJson.Str("id");
+        var allLibraries = new List<LibRef>();
+        if (vanillaJson.ValueKind == JsonValueKind.Object)
+            allLibraries.AddRange(Mojang.CollectLibraries(vanillaJson));
+        if (isModded)
+            allLibraries.AddRange(Mojang.CollectLibraries(vj));
+
+        var distinctLibraries = allLibraries
+            .GroupBy(l => l.RelPath, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .ToList();
+
+        var missing = distinctLibraries
             .Where(l => !File.Exists(l.AbsPath(libsRoot)))
             .ToList();
         var i = 0;
@@ -50,7 +78,7 @@ public static class GameLauncher
             {
                 Phase = "Доскачивание библиотек",
                 Detail = $"{++i}/{missing.Count}",
-                Percent = 70 + (int)(20.0 * i / missing.Count),
+                Percent = 70 + (int)(20.0 * i / Math.Max(1, missing.Count)),
             });
         }
 
@@ -67,10 +95,13 @@ public static class GameLauncher
         }
 
         var nativesDir = Path.Combine(versionsRoot, id, "natives");
-        Mojang.ExtractNatives(vj, nativesDir, libsRoot);
+        if (vanillaJson.ValueKind == JsonValueKind.Object)
+            Mojang.ExtractNatives(vanillaJson, nativesDir, libsRoot);
+        if (isModded)
+            Mojang.ExtractNatives(vj, nativesDir, libsRoot);
 
-        var (jvmArgs, gameArgs) = BuildArgs(vj, inst, id, gameJar, nativesDir, account, mcToken);
-        var mainClass = vj.Str("mainClass") ?? throw new InvalidDataException("в json версии нет mainClass");
+        var (jvmArgs, gameArgs) = BuildArgs(vj, vanillaJson, inst, id, gameJar, nativesDir, distinctLibraries, account, mcToken);
+        var mainClass = vj.Str("mainClass") ?? vanillaJson.Str("mainClass") ?? throw new InvalidDataException("в json версии нет mainClass");
 
         prog.Report(new ProgressReport { Phase = "Запуск игры", Percent = 95 });
         Directory.CreateDirectory(inst.GameDir);
@@ -80,17 +111,56 @@ public static class GameLauncher
             FileName = java,
             WorkingDirectory = inst.GameDir,
             UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = false,
         };
         foreach (var a in jvmArgs) psi.ArgumentList.Add(a);
         psi.ArgumentList.Add(mainClass);
         foreach (var a in gameArgs) psi.ArgumentList.Add(a);
 
+        Ctx.Log($"[Launch Command] \"{java}\" {SanitizeLaunchArgs(psi.ArgumentList)}");
+
+        var gameLog = new System.Text.StringBuilder();
         var proc = new Process { StartInfo = psi, EnableRaisingEvents = true };
-        proc.OutputDataReceived += (_, e) => { if (e.Data != null) Ctx.Log("[Minecraft] " + e.Data); };
-        proc.ErrorDataReceived += (_, e) => { if (e.Data != null) Ctx.Log("[Minecraft] " + e.Data); };
+        proc.OutputDataReceived += (_, e) =>
+        {
+            if (e.Data != null)
+            {
+                Ctx.Log("[Minecraft] " + e.Data);
+                lock (gameLog) gameLog.AppendLine(e.Data);
+            }
+        };
+        proc.ErrorDataReceived += (_, e) =>
+        {
+            if (e.Data != null)
+            {
+                Ctx.Log("[Minecraft] " + e.Data);
+                lock (gameLog) gameLog.AppendLine(e.Data);
+            }
+        };
+        proc.Exited += (_, _) =>
+        {
+            var code = proc.ExitCode;
+            Ctx.Log($"[GameLauncher] Процесс игры завершился с кодом {code}");
+            string fullOutput;
+            lock (gameLog) fullOutput = gameLog.ToString();
+
+            bool isCrash = code != 0 ||
+                           fullOutput.Contains("A mod crashed on startup", StringComparison.OrdinalIgnoreCase) ||
+                           fullOutput.Contains("Incompatible mods found", StringComparison.OrdinalIgnoreCase) ||
+                           fullOutput.Contains("Exception in thread", StringComparison.OrdinalIgnoreCase) ||
+                           fullOutput.Contains("CrashReport", StringComparison.OrdinalIgnoreCase);
+
+            if (isCrash)
+            {
+                var crashInfo = CrashAnalyzer.Analyze(fullOutput, code);
+                GameCrashed?.Invoke(crashInfo, inst);
+            }
+        };
         proc.Start();
-        proc.BeginOutputReadLine();
-        proc.BeginErrorReadLine();
+        try { proc.BeginOutputReadLine(); } catch (Exception ex) { Ctx.Log("[Launch] Ошибка перенаправления stdout: " + ex.Message); }
+        try { proc.BeginErrorReadLine(); } catch (Exception ex) { Ctx.Log("[Launch] Ошибка перенаправления stderr: " + ex.Message); }
         prog.Report(new ProgressReport { Phase = "Игра запущена", Percent = 100 });
         Ctx.Log($"Minecraft {inst.Subtitle} запущен (PID {proc.Id})");
         return proc;
@@ -98,19 +168,21 @@ public static class GameLauncher
 
     private static async Task<JsonElement> VanillaJsonFor(JsonElement loaderJson, string versionsRoot)
     {
-        if (loaderJson.El("javaVersion") != null) return loaderJson;
         var mc = loaderJson.Str("inheritsFrom");
-        if (mc == null) return loaderJson;
-        return await Mojang.FetchVersionJsonAsync(mc, versionsRoot);
+        if (!string.IsNullOrEmpty(mc))
+        {
+            return await Mojang.FetchVersionJsonAsync(mc, versionsRoot);
+        }
+        return loaderJson;
     }
 
     private static (List<string> jvm, List<string> game) BuildArgs(
-        JsonElement vj, Instance inst, string versionId, string gameJar, string nativesDir,
-        MinecraftAccount account, string mcToken)
+        JsonElement vj, JsonElement vanillaJson, Instance inst, string versionId, string gameJar, string nativesDir,
+        List<LibRef> allLibraries, MinecraftAccount account, string mcToken)
     {
         var libsRoot = Path.Combine(LauncherLayout.SharedRoot, "libraries");
         var classpath = string.Join(Path.PathSeparator,
-            Mojang.CollectLibraries(vj).Select(l => l.AbsPath(libsRoot)).Concat(new[] { gameJar }).Distinct());
+            allLibraries.Select(l => l.AbsPath(libsRoot)).Concat(new[] { gameJar }).Distinct(StringComparer.OrdinalIgnoreCase));
 
         var vars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -119,14 +191,14 @@ public static class GameLauncher
             ["game_directory"] = inst.GameDir,
             ["assets_root"] = Paths.AssetsDir,
             ["game_assets"] = Path.Combine(Paths.AssetsDir, "virtual", "legacy"),
-            ["assets_index_name"] = vj.Str("assets") ?? "legacy",
+            ["assets_index_name"] = (vanillaJson.Str("assets") ?? vj.Str("assets")) ?? "legacy",
             ["auth_uuid"] = account.Uuid,
             ["auth_access_token"] = mcToken,
             ["auth_xuid"] = "",
             ["clientid"] = Ctx.Settings.ClientToken,
             ["auth_session"] = "token:" + mcToken + ":" + account.Uuid,
-            ["user_type"] = "msa",
-            ["version_type"] = vj.Str("type") ?? "release",
+            ["user_type"] = account.IsOffline ? "mojang" : "msa",
+            ["version_type"] = vj.Str("type") ?? vanillaJson.Str("type") ?? "release",
             ["natives_directory"] = nativesDir,
             ["launcher_name"] = "AuroraLauncher",
             ["launcher_version"] = "1.0.0",
@@ -158,27 +230,53 @@ public static class GameLauncher
         foreach (var raw in (s.ExtraJvmArgs ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
             jvm.Add(raw);
 
-        if (vj.El("arguments") is { } argsObj)
+        // 1. JVM-аргументы из ванильной версии
+        if (vanillaJson.El("arguments") is { } vArgsObj)
         {
-            // Современный формат версий
-            foreach (var a in argsObj.Arr("jvm"))
+            foreach (var a in vArgsObj.Arr("jvm"))
                 AppendArg(jvm, a, Subst, features);
-            jvm.Add("-cp");
-            jvm.Add(classpath);
-
-            foreach (var a in argsObj.Arr("game"))
-                AppendArg(game, a, Subst, features);
         }
         else
         {
-            // Старый формат (до 1.13): minecraftArguments
             jvm.Add("-Djava.library.path=" + nativesDir);
+        }
+
+        bool isModded = vj.Str("id") != vanillaJson.Str("id");
+
+        // 2. JVM-аргументы из лоадера (Fabric/Forge)
+        if (isModded && vj.El("arguments") is { } lArgsObj)
+        {
+            foreach (var a in lArgsObj.Arr("jvm"))
+                AppendArg(jvm, a, Subst, features);
+        }
+
+        // Гарантируем, что nativesDir и classpath переданы в JVM
+        if (!jvm.Any(x => x.StartsWith("-Djava.library.path=")))
+            jvm.Add("-Djava.library.path=" + nativesDir);
+
+        if (!jvm.Contains("-cp"))
+        {
             jvm.Add("-cp");
             jvm.Add(classpath);
-            var mcArgs = vj.Str("minecraftArguments");
-            if (mcArgs != null)
-                foreach (var tok in Subst(mcArgs).Split(' '))
-                    if (tok.Length > 0) game.Add(tok);
+        }
+
+        // 3. Game-аргументы из ванильной версии
+        if (vanillaJson.El("arguments") is { } vgArgsObj)
+        {
+            foreach (var a in vgArgsObj.Arr("game"))
+                AppendArg(game, a, Subst, features);
+        }
+        else if (vanillaJson.Str("minecraftArguments") is { } vMcArgs)
+        {
+            foreach (var tok in Subst(vMcArgs).Split(' '))
+                if (tok.Length > 0) game.Add(tok);
+        }
+
+        // 4. Game-аргументы из лоадера
+        if (isModded && vj.El("arguments") is { } lgArgsObj)
+        {
+            foreach (var a in lgArgsObj.Arr("game"))
+                AppendArg(game, a, Subst, features);
         }
 
         // Страховка: обязательные игровые аргументы, если версия их не задаёт сама
@@ -189,7 +287,7 @@ public static class GameLauncher
         EnsurePair(game, "--assetIndex", V("assets_index_name"));
         EnsurePair(game, "--uuid", V("auth_uuid"));
         EnsurePair(game, "--accessToken", mcToken);
-        EnsureValue(game, "--userType", "msa");
+        EnsureValue(game, "--userType", account.IsOffline ? "mojang" : "msa");
         EnsureValue(game, "--versionType", "AuroraLauncher");
         if (Ctx.Settings.CustomResolution)
         {
@@ -241,5 +339,36 @@ public static class GameLauncher
         var idx = list.IndexOf(key);
         if (idx >= 0 && idx + 1 < list.Count) { list[idx + 1] = value; return; }
         if (idx < 0) { list.Add(key); list.Add(value); }
+    }
+
+    private static string SanitizeLaunchArgs(IEnumerable<string> args)
+    {
+        var sanitized = new List<string>();
+        bool nextIsSensitive = false;
+        foreach (var arg in args)
+        {
+            if (nextIsSensitive)
+            {
+                sanitized.Add("***REDACTED***");
+                nextIsSensitive = false;
+                continue;
+            }
+
+            if (arg is "--accessToken" or "-accessToken" or "--session")
+            {
+                sanitized.Add(arg);
+                nextIsSensitive = true;
+                continue;
+            }
+
+            if (arg.StartsWith("token:", StringComparison.OrdinalIgnoreCase))
+            {
+                sanitized.Add("token:***REDACTED***");
+                continue;
+            }
+
+            sanitized.Add(arg.Contains(' ') ? $"\"{arg}\"" : arg);
+        }
+        return string.Join(" ", sanitized);
     }
 }

@@ -1,0 +1,42 @@
+AURORA LAUNCHER - LICENSE & LEGAL INFORMATION
+==============================================
+
+[PENDING OWNER SELECTION / НА СТАДИИ ВЫБОРА ВЛАДЕЛЬЦЕМ ПРОЕКТА]
+
+Окончательный выбор открытой или проприетарной лицензии для Aurora Launcher
+находится на рассмотрении и ожидает подтверждения владельцем репозитория.
+
+Ниже представлен проект предварительной лицензии (MIT License Draft), а также
+информация о доступных вариантах лицензирования (MIT, GPL-3.0, Apache-2.0, All Rights Reserved):
+
+--------------------------------------------------------------------------------
+DRAFT / ПРЕДВАРИТЕЛЬНЫЙ ТЕКСТ ЛИЦЕНЗИИ (MIT):
+
+Copyright (c) 2026 Aurora Launcher Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+ОБЯЗАТЕЛЬНЫЕ УВЕДОМЛЕНИЯ И ОТКАЗ ОТ ОТВЕТСТВЕННОСТИ (LEGAL NOTICE & DISCLAIMER):
+
+NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
+«ЭТО НЕ ОФИЦИАЛЬНЫЙ ПРОДУКТ MINECRAFT. ПРОЕКТ НЕ ОДОБРЕН MOJANG И MICROSOFT И НЕ СВЯЗАН С НИМИ».
+
+Minecraft is a trademark or registered trademark of Mojang Synergies AB / Microsoft Corporation.
+This project is an independent launcher developed for lawful owners of Minecraft: Java Edition licenses.

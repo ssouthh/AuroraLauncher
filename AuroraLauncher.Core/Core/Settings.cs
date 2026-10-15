@@ -28,9 +28,12 @@ public static class Paths
 
 public class Settings
 {
-    /// <summary>Публичный client_id Azure, используемый открытыми лаунчерами (Prism Launcher).
-    /// Можно заменить своим в настройках.</summary>
-    public const string DefaultMsClientId = "c36a9fb6-4f2a-41ff-90bd-ae7cc92031eb";
+    /// <summary>
+    /// По умолчанию пустой. Требуется зарегистрировать собственный Application (Client) ID
+    /// в Microsoft Entra ID (Azure Portal) и указать его в настройках или через AURORA_MS_CLIENT_ID.
+    /// Использование чужих Client ID сторонних лаунчеров без разрешения запрещено.
+    /// </summary>
+    public const string DefaultMsClientId = "";
 
     public int RamMb { get; set; } = 4096;
     public bool CustomResolution { get; set; } = false;
@@ -38,6 +41,11 @@ public class Settings
     public int WindowHeight { get; set; } = 480;
     public string ExtraJvmArgs { get; set; } = "";
     public string JavaPath { get; set; } = "";
+    public bool ShowSnapshots { get; set; } = false;
+    public bool ShowOldVersions { get; set; } = false;
+    public bool DebugMode { get; set; } = false;
+    public string AppTheme { get; set; } = "Default";
+    public string Language { get; set; } = "system";
     [JsonIgnore]
     public string CurseApiKey { get; set; } = "";
 

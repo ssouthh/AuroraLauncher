@@ -50,9 +50,16 @@ public static class Loaders
     {
         var versionsRoot = Path.Combine(mcDir, "versions");
         var loaderVer = spec.LoaderVersion;
-        var url = string.IsNullOrEmpty(loaderVer)
-            ? $"https://meta.fabricmc.net/v2/versions/loader/{spec.McVersion}/stable/1/profile/json"
-            : $"https://meta.fabricmc.net/v2/versions/loader/{spec.McVersion}/{loaderVer}/profile/json";
+        if (string.IsNullOrEmpty(loaderVer) || loaderVer.Contains("Последняя"))
+        {
+            var available = await FabricVersionsForAsync(spec.McVersion, ct);
+            if (available.Count == 0)
+                throw new InvalidOperationException($"Для версии Minecraft {spec.McVersion} загрузчик Fabric не найден. Выберите релизную версию игры (например 1.20.1, 1.21.1).");
+            loaderVer = available[0];
+            spec.LoaderVersion = loaderVer;
+        }
+
+        var url = $"https://meta.fabricmc.net/v2/versions/loader/{spec.McVersion}/{loaderVer}/profile/json";
 
         prog.Report(new ProgressReport { Phase = "Профиль Fabric", Percent = 30 });
         var profile = await Net.GetJsonAsync(url, ct);
@@ -147,13 +154,31 @@ public static class Loaders
         var cache = Path.Combine(Paths.CacheDir, "installers");
         Directory.CreateDirectory(cache);
         var installer = Path.Combine(cache, Path.GetFileName(installerUrl));
-        if (!File.Exists(installer))
-            await Net.DownloadFileAsync(installerUrl, installer, ct: ct);
 
-        // Установщику нужна Java 8+; берём любую локальную или рантайм 17
-        prog.Report(new ProgressReport { Phase = "Запуск установщика", Percent = 35 });
-        var java = await Runtimes.FindBestLocalAsync(8, ct)
-                   ?? await Runtimes.EnsureRuntimeAsync("java-runtime-gamma", prog.Slice(35, 55), ct);
+        // Получаем официальную контрольную сумму SHA-1, опубликованную maven-репозиторием установщика
+        string? expectedSha1 = null;
+        try
+        {
+            using var resp = await Net.Client.GetAsync(installerUrl + ".sha1", ct);
+            if (resp.IsSuccessStatusCode)
+            {
+                var txt = (await resp.Content.ReadAsStringAsync(ct)).Trim();
+                var m = Regex.Match(txt, @"\b([0-9a-fA-F]{40})\b");
+                if (m.Success)
+                    expectedSha1 = m.Groups[1].Value.ToLowerInvariant();
+            }
+        }
+        catch { /* .sha1 файл недоступен на maven — загрузка продолжается с официального хоста */ }
+
+        if (!File.Exists(installer))
+            await Net.DownloadFileAsync(installerUrl, installer, sha1: expectedSha1, ct: ct);
+
+        // Установщику нужна Java, соответствующая версии Minecraft (Java 21 для 1.20.5+, Java 17 для 1.18+, и т.д.)
+        var requiredMajor = Runtimes.RequiredJavaMajorForMc(spec.McVersion);
+        var component = Runtimes.MojangComponentForMajor(requiredMajor);
+        prog.Report(new ProgressReport { Phase = $"Поиск Java {requiredMajor}+ для установщика", Percent = 35 });
+        var java = await Runtimes.FindBestLocalAsync(requiredMajor, ct)
+                   ?? await Runtimes.EnsureRuntimeAsync(component, prog.Slice(35, 55), ct);
 
         var id = spec.DirName;
         var args = new List<string> { "-jar", installer, "--installClient", mcDir };

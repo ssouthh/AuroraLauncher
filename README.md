@@ -1,119 +1,152 @@
-# English
+# Aurora Launcher
 
-## Aurora Launcher
-
-A personal Minecraft launcher for Windows built with WinUI 3. The UI project is located in `AuroraLauncher.WinUI`, while game services and APIs are in `AuroraLauncher.Core`.
-
-## Building and Running
-
-Requires the .NET 8 SDK and Windows 10 version 1809 or later. From the `AuroraLauncher` directory:
-
-```powershell
-dotnet build .\AuroraLauncher.WinUI\AuroraLauncher.WinUI.csproj -c Release
-dotnet run --project .\AuroraLauncher.WinUI\AuroraLauncher.WinUI.csproj -c Release
-```
-
-After building, the executable is located at `AuroraLauncher.WinUI\bin\Release\net8.0-windows10.0.19041.0\AuroraLauncher.WinUI.exe`. To publish the application to a folder:
-
-```powershell
-dotnet publish .\AuroraLauncher.WinUI\AuroraLauncher.WinUI.csproj -c Release -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true
-```
-
-## Features
-
-- Official Microsoft sign-in using a one-time code. Passwords are entered on Microsoft's website; tokens are stored using Windows DPAPI.
-- Isolated Vanilla, Forge, NeoForge, and Fabric installations, with support for selecting Minecraft versions and available mod loader versions.
-- Installation of the game client, libraries, game assets, and a compatible Java runtime. The launcher can use a detected Java installation or perform a deep scan across available drives.
-- Launching the selected installation using a Minecraft Java Edition account.
-- Mod discovery through Modrinth without an API key and CurseForge with a personal API key. Compatible files can be installed into the `mods` directory, and installed files can be removed.
-- In-app configuration of JVM memory allocation, Java path, window size, additional JVM arguments, and API settings.
-
-## Data Storage
-
-By default, data is stored in `%APPDATA%\AuroraLauncher`, including settings, the DPAPI-encrypted account, the installation registry, a shared library and asset cache, Java runtimes, and logs. Each installation maintains its own separate game directory.
-
-CurseForge requires a valid CurseForge API key. Vanilla versions and mod loader installers are downloaded from official servers, while Modrinth uses its official API. Game file downloads are verified against published checksums wherever the server provides them.
-
-## Known Limitations
-
-- CurseForge search is unavailable until an API key is configured. Some CurseForge files do not provide a direct CDN URL and therefore cannot be installed through the API.
-- Individual mod installation is supported. Importing CurseForge or Modrinth modpacks is not yet implemented.
-- Forge and NeoForge installation depends on the availability of an official installer for the specific Minecraft version.
-
-# Russian
-
-## Aurora Launcher
-
-Персональный лаунчер Minecraft для Windows на WinUI 3. UI-проект находится в `AuroraLauncher.WinUI`, игровые службы и API — в `AuroraLauncher.Core`.
-
-## Сборка и запуск
-
-Нужен .NET 8 SDK и Windows 10 1809 или новее. Из каталога `AuroraLauncher`:
-
-```powershell
-dotnet build .\AuroraLauncher.WinUI\AuroraLauncher.WinUI.csproj -c Release
-dotnet run --project .\AuroraLauncher.WinUI\AuroraLauncher.WinUI.csproj -c Release
-```
-
-Исполняемый файл после сборки находится в `AuroraLauncher.WinUI\bin\Release\net8.0-windows10.0.19041.0\AuroraLauncher.WinUI.exe`. Для публикации в папку:
-
-```powershell
-dotnet publish .\AuroraLauncher.WinUI\AuroraLauncher.WinUI.csproj -c Release -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true
-```
-
-## Возможности
-
-- Официальный вход Microsoft по одноразовому коду. Пароль вводится на странице Microsoft; токены хранятся через DPAPI Windows.
-- Изолированные сборки Vanilla, Forge, NeoForge и Fabric с выбором версии Minecraft и доступной версии загрузчика.
-- Установка клиента, библиотек, игровых ресурсов и подходящей Java. Можно использовать найденную Java или выполнить глубокий поиск по дискам.
-- Запуск выбранной сборки с аккаунтом Minecraft Java Edition.
-- Поиск модов в Modrinth без ключа и CurseForge с личным API-ключом; установка совместимого файла в `mods` и удаление установленных файлов.
-- Память JVM, путь к Java, размер окна, дополнительные JVM-аргументы и настройки API в приложении.
-
-## Данные
-
-По умолчанию данные хранятся в `%APPDATA%\AuroraLauncher`: настройки, DPAPI-зашифрованный аккаунт, реестр сборок, кэш общих библиотек/ресурсов, рантаймы и логи. Каждая сборка хранит папку игры отдельно.
-
-CurseForge требует выданный CurseForge API-ключ. Ванильные версии и установщики загрузчиков берутся с официальных серверов; Modrinth использует официальный API. Загрузки игровых файлов проверяются по опубликованным контрольным суммам там, где сервер их предоставляет.
-
-## Известные границы
-
-- Поиск CurseForge недоступен до ввода API-ключа; некоторые файлы CurseForge не дают прямую CDN-ссылку и тогда их нельзя установить через API.
-- Поддерживается установка отдельных модов. Импорт модпаков CurseForge/Modrinth пока не реализован.
-- Установка Forge/NeoForge зависит от доступности официального установщика для конкретной версии Minecraft.
+> [!IMPORTANT]
+> **NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.**
+>
+> **«ЭТО НЕ ОФИЦИАЛЬНЫЙ ПРОДУКТ MINECRAFT. ПРОЕКТ НЕ ОДОБРЕН MOJANG И MICROSOFT И НЕ СВЯЗАН С НИМИ».**
 
 ---
 
-# Legal Notice / Юридическая информация
+Aurora Launcher — независимый сторонний лаунчер Minecraft: Java Edition для Windows с современным интерфейсом на WinUI 3 (Windows App SDK) и платформе .NET 8.
 
-## English
+Проект разработан исключительно для владельцев подлинных лицензионных учетных записей Minecraft Java Edition и строго соблюдает правила Mojang Studios Brand and Assets Guidelines и Microsoft Services Agreement.
 
-Aurora Launcher is an independent, unofficial third-party launcher for Minecraft: Java Edition. It is not affiliated with, endorsed by, sponsored by, or approved by Mojang Studios or Microsoft.
+---
 
-**NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.**
+## Содержание
 
-Minecraft is a trademark of Mojang Studios. All rights to Minecraft, its name, logos, game assets, and related intellectual property belong to their respective owners.
+1. [Правовой статус и дисклеймеры](#правовой-статус-и-дисклеймеры)
+2. [Системные требования](#системные-требования)
+3. [Регистрация Microsoft Entra ID (OAuth Client ID)](#регистрация-microsoft-entra-id-oauth-client-id)
+4. [Сборка и локальный запуск](#сборка-и-локальный-запуск)
+5. [Безопасность и защита данных](#безопасность-и-защита-данных)
+6. [Загрузчики модов и каталоги](#загрузчики-модов-и-каталоги)
+7. [Лицензии компонентов и открытого ПО](#лицензии-компонентов-и-открытого-по)
+8. [Сообщение об уязвимостях (Security Disclosure)](#сообщение-об-уязвимостях-security-disclosure)
 
-Aurora Launcher is a separate software project and does not include or distribute copies of the Minecraft game. Game files are downloaded from official sources where available. Users must comply with the applicable Minecraft End User License Agreement and other relevant terms when accessing or playing the game.
+---
 
-This project is not sponsored by or affiliated with Modrinth, CurseForge, or Microsoft. Third-party names and trademarks belong to their respective owners. Third-party services and components are subject to their own terms and licenses.
+## Правовой статус и дисклеймеры
 
-The launcher is provided "AS IS", without warranties of any kind, to the extent permitted by applicable law.
+- **Minecraft**, а также соответствующие логотипы, названия мобов, скинов и игровых ассетов являются товарными знаками или зарегистрированными товарными знаками **Mojang Synergies AB** и **Microsoft Corporation**.
+- Aurora Launcher не является официальным продуктом Mojang или Microsoft. Лаунчер не распространяет проприетарные клиентские JAR-файлы, звуки, текстуры или бинарные библиотеки игры в составе своего репозитория или установщика — все компоненты загружаются напрямую с официальных серверов Mojang (`piston-meta.mojang.com`, `libraries.minecraftnet`) с обязательной сверкой контрольных сумм SHA-1.
+- В лаунчере **полностью отсутствует и не поддерживается cracked/offline-режим**, предназначенный для обхода авторизации или проверки подлинности лицензии. Для запуска игры требуется действующий профиль Minecraft Java Edition.
 
-For more information, see the [Minecraft Usage Guidelines](https://www.minecraft.net/en-us/usage-guidelines).
+---
 
-## Русский
+## Системные требования
 
-Aurora Launcher — независимый неофициальный сторонний лаунчер для Minecraft: Java Edition. Проект не связан с Mojang Studios или Microsoft, не одобрен и не спонсируется этими компаниями.
+- **Операционная система**: Windows 10 (сборка 1809 / 17763 или выше) или Windows 11 (x64 / ARM64).
+- **Среда разработки / сборки**: .NET 8 SDK (8.0.x).
+- **Среда выполнения**: Windows App SDK Runtime 1.8+ (при сборке с self-contained не требуется).
+- **Java**: Java 8, 17, 21 или новее (лаунчер умеет автоматически находить установленные версии или загружать их при необходимости).
+- **Лицензия**: Аккаунт Microsoft с приобретенной лицензией Minecraft Java Edition.
 
-**ЭТО НЕ ОФИЦИАЛЬНЫЙ ПРОДУКТ MINECRAFT. ПРОДУКТ НЕ ОДОБРЕН И НЕ СВЯЗАН С MOJANG ИЛИ MICROSOFT.**
+---
 
-Minecraft является товарным знаком Mojang Studios. Все права на Minecraft, его название, логотипы, игровые материалы и связанную интеллектуальную собственность принадлежат соответствующим правообладателям.
+## Регистрация Microsoft Entra ID (OAuth Client ID)
 
-Aurora Launcher является отдельным программным проектом и не включает в себя и не распространяет копии игры Minecraft. Игровые файлы загружаются из официальных источников, где это возможно. При использовании игры пользователи обязаны соблюдать применимые условия лицензионного соглашения Minecraft и другие соответствующие правила.
+В соответствии с правилами Microsoft Identity Platform и безопасностью OAuth, приложения не должны использовать чужие Client ID сторонних проектов. Каждый владелец проекта или пользователь может бесплатно зарегистрировать собственный идентификатор приложения в Azure Portal за 2 минуты:
 
-Проект не спонсируется и не связан с Modrinth, CurseForge или Microsoft. Названия и товарные знаки сторонних компаний принадлежат их владельцам. На сторонние сервисы и компоненты распространяются собственные условия использования и лицензии.
+### Пошаговая инструкция
 
-Лаунчер предоставляется «КАК ЕСТЬ», без каких-либо гарантий в пределах, допускаемых применимым законодательством.
+1. Перейдите на портал [Microsoft Entra ID / Azure Portal](https://portal.azure.com/) и войдите под своей личной учетной записью Microsoft.
+2. В строке поиска найдите и откройте сервис **Microsoft Entra ID** (или **Azure Active Directory**), затем выберите в левом меню **App registrations** (Регистрация приложений).
+3. Нажмите кнопку **+ New registration** (+ Новая регистрация):
+   - **Name**: укажите любое понятное имя, например `Aurora Launcher`.
+   - **Supported account types**: обязательно выберите третий пункт:
+     > *«Accounts in any organizational directory (Any Microsoft Entra ID tenant - Multitenant) and personal Microsoft accounts (e.g. Skype, Xbox)»*
+   - **Redirect URI**: выберите тип **Public client/native (mobile & desktop)** и укажите:
+     `https://login.live.com/oauth20_desktop.srf`
+   - Нажмите **Register** (Зарегистрировать).
+4. Настройка аутентификации:
+   - В меню созданного приложения перейдите в подраздел **Authentication** (Аутентификация).
+   - В разделе *Redirect URIs* при необходимости добавьте также `https://login.microsoftonline.com/common/oauth2/nativeclient`.
+   - В блоке **Advanced settings** (Расширенные параметры) найдите пункт **Allow public client flows** (Разрешить потоки общедоступных клиентов) и переключите в положение **Yes** (Да).
+   - Нажмите кнопку **Save** (Сохранить) в верхней части страницы.
+5. Настройка разрешений API:
+   - Перейдите в раздел **API permissions** (Разрешения API) -> **Add a permission** -> вкладка **APIs my organization uses** (или *Microsoft APIs*).
+   - Найдите **XboxLive** -> выберите **Delegated permissions** -> отметьте `XboxLive.signin`.
+   - Убедитесь, что в списке также присутствует `offline_access` (для обновления токена без повторного логина).
+6. Получение Client ID:
+   - Перейдите в раздел **Overview** (Обзор) вашего приложения.
+   - Скопируйте значение из поля **Application (client) ID** (строка формата GUID `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`).
+7. Указание Client ID в Aurora Launcher:
+   - **Способ 1 (через настройки)**: Запустите Aurora Launcher -> откройте **Параметры и Настройки** -> вкладка **🔑 Аккаунты и API** -> вставьте скопированный ID в поле **Microsoft Azure OAuth Client ID** -> нажмите *Сохранить*.
+   - **Способ 2 (через переменную окружения)**: Установите системную или пользовательскую переменную окружения `AURORA_MS_CLIENT_ID`:
+     ```powershell
+     [Environment]::SetEnvironmentVariable("AURORA_MS_CLIENT_ID", "ваш-client-id-здесь", "User")
+     ```
 
-Подробнее: [Правила использования Minecraft](https://www.minecraft.net/en-us/usage-guidelines).
+---
+
+## Сборка и локальный запуск
+
+Исходный код разделен на две части:
+- `AuroraLauncher.Core` — независимая библиотека служб (загрузка метаданных Mojang, проверка SHA-1, управление сборками, запуск JVM, шифрование DPAPI).
+- `AuroraLauncher.WinUI` — пользовательский интерфейс Windows App SDK / WinUI 3.
+
+### Сборка Debug / Release
+
+```powershell
+# Перейдите в каталог AuroraLauncher
+cd AuroraLauncher
+
+# Восстановление зависимостей и компиляция
+dotnet build .\AuroraLauncher.WinUI\AuroraLauncher.WinUI.csproj -c Release
+```
+
+### Запуск
+
+```powershell
+dotnet run --project .\AuroraLauncher.WinUI\AuroraLauncher.WinUI.csproj -c Release
+```
+
+### Публикация автономного бинарного дистрибутива (Self-Contained)
+
+```powershell
+dotnet publish .\AuroraLauncher.WinUI\AuroraLauncher.WinUI.csproj -c Release -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true -p:PublishSingleFile=false
+```
+
+Результат публикации будет расположен в:
+`AuroraLauncher.WinUI\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\`
+
+---
+
+## Безопасность и защита данных
+
+- **Хранение секретов**: Все чувствительные данные (токены доступа, сессии Minecraft, персональные ключи API CurseForge) хранятся в защищенном виде с использованием **Windows Data Protection API (DPAPI)** через `System.Security.Cryptography.ProtectedData`. Доступ к расшифровке имеет исключительно локальный профиль пользователя Windows.
+- **Пароли пользователей**: Лаунчер никогда не запрашивает, не обрабатывает и не сохраняет пароли пользователей. Вся аутентификация происходит на официальных защищенных веб-узлах Microsoft.
+- **Маскирование в логах**: Токены аутентификации (`access_token`, `refresh_token`, сессионные параметры `--accessToken`) строго фильтруются и автоматически маскируются (`***REDACTED***`) перед выводом в консоль отладки и файлы журналов.
+- **Телеметрия**: Лаунчер не содержит скрытых модулей сбора телеметрии, слежки, аналитики или передачи персональных данных третьим лицам.
+- **Целостность файлов**: Все загружаемые метаданные, клиентские библиотеки, нативные сборки и ресурсы сверяются с официальными хэшами SHA-1 и контрольными размерами байтов перед сохранением на диск.
+
+---
+
+## Загрузчики модов и каталоги
+
+- **Fabric**: Загружается напрямую через официальный API `meta.fabricmc.net` и maven-репозиторий Fabric.
+- **Forge / NeoForge**: Официальные JAR-установщики скачиваются с `files.minecraftforge.net` и `maven.neoforged.net` и запускаются через изолированную локальную Java.
+- **Modrinth API**: Официальный API открытого каталога модов `api.modrinth.com`.
+- **CurseForge API**: Для доступа к каталогу CurseForge требуется личный бесплатный API-ключ, получаемый пользователем на `console.curseforge.com`. Ключ сохраняется в DPAPI-зашифрованном виде.
+
+---
+
+## Лицензии компонентов и открытого ПО
+
+Aurora Launcher опирается на компоненты с открытым исходным кодом:
+- **Microsoft Windows App SDK / WinUI 3** — [Microsoft Software License / MIT](https://github.com/microsoft/WindowsAppSDK)
+- **System.Security.Cryptography.ProtectedData** — [MIT License](https://github.com/dotnet/runtime)
+- **Fabric Meta & Loader** — [Apache License 2.0](https://github.com/FabricMC/fabric-loader)
+- **Minecraft Forge / NeoForge** — [LGPL 2.1 / GPL / Open Source](https://github.com/MinecraftForge/MinecraftForge)
+
+Рекомендуемая лицензия для самого репозитория Aurora Launcher: **MIT License** или **GPL-3.0** (на усмотрение владельца проекта).
+
+---
+
+## Сообщение об уязвимостях (Security Disclosure)
+
+Если вы обнаружили потенциальную проблему безопасности или уязвимость в Aurora Launcher:
+1. Пожалуйста, не публикуйте информацию об уязвимости в открытых публичных issues.
+2. Сообщите авторам проекта через приватный репозиторий GitHub Security Advisories или направьте конфиденциальное сообщение владельцу репозитория.
+3. Опишите шаги для воспроизведения и предполагаемое влияние уязвимости. Мы стремимся оперативно устранять любые риски безопасности.

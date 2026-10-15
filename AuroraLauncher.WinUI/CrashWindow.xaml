@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="AuroraLauncher.CrashWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Сбой Minecraft — Умный диагностический отчет">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Шапка с диагнозом сбоя -->
+        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
+                BorderThickness="0,0,0,2"
+                Padding="24,20">
+            <StackPanel Spacing="14">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Border Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}"
+                            Width="44" Height="44" CornerRadius="22"
+                            VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xEA39;" FontSize="22" Foreground="{ThemeResource SystemFillColorCriticalBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="CrashTitleText" Text="Игра завершилась с ошибкой" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock x:Name="ExitCodeText" Text="Код завершения: 1" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Карточка интеллектуальной диагностики -->
+                <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16,14">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock x:Name="CulpritLabel" Text="Виновник сбоя:" FontWeight="SemiBold" Style="{ThemeResource BodyTextBlockStyle}" />
+                            <Border x:Name="CulpritBadge"
+                                    Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}"
+                                    CornerRadius="4"
+                                    Padding="8,2">
+                                <TextBlock x:Name="CulpritText" Text="Мод" FontWeight="Bold" Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                            </Border>
+                        </StackPanel>
+
+                        <TextBlock x:Name="ExplanationText" Text="Описание ошибки..." Style="{ThemeResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                CornerRadius="6"
+                                Padding="12,10"
+                                Margin="0,4,0,0">
+                            <StackPanel Spacing="4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE783;" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                    <TextBlock x:Name="AdviceLabel" Text="Совет по устранению:" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                </StackPanel>
+                                <TextBlock x:Name="RecommendationText" Text="Рекомендация..." Style="{ThemeResource CaptionTextBlockStyle}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Консоль полного лога сбоя -->
+        <Grid Grid.Row="1" Padding="24,14,24,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Margin="0,0,0,8">
+                <TextBlock x:Name="LogHeaderTitle" Text="Журнал вывода и стек ошибки (Лог):" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                <Button Click="CopyLog_Click" HorizontalAlignment="Right" Padding="12,4">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE8C8;" FontSize="12" />
+                        <TextBlock x:Name="CopyLogBtnText" Text="Копировать лог" FontSize="12" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <TextBox x:Name="CrashLogTextBox"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             TextWrapping="NoWrap"
+                             FontFamily="Consolas, Cascadia Code, Courier New"
+                             FontSize="11"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="0" />
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Нижние кнопки действий -->
+        <Border Grid.Row="2"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="24,12">
+            <Grid>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button x:Name="DeleteCulpritModBtn" Click="DeleteCulpritModBtn_Click" Style="{ThemeResource AccentButtonStyle}" Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                            <TextBlock x:Name="DeleteCulpritModText" Text="Удалить сбойный мод" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="CrashReportsFolderBtn" Click="OpenCrashReportsFolder_Click" Content="Папка отчетов (crash-reports)" />
+                </StackPanel>
+
+                <Button x:Name="CloseCrashWindowBtn" Click="CloseBtn_Click" HorizontalAlignment="Right" Content="Закрыть" Width="100" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

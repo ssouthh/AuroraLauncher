@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace AuroraLauncher.Core;
 
 public sealed record ModHit(string Id, string Title, string Author, string Description, string Downloads,
-    string IconUrl, string Source)
+    string IconUrl, string Source, string Slug = "")
 {
     public string SourceShort => Source;
     public string DisplayAuthor => string.IsNullOrEmpty(Author) ? Source : $"{Source} · {Author}";
@@ -18,23 +18,28 @@ public static class Mods
 {
     // ================= Поиск =================
 
-    public static async Task<List<ModHit>> SearchModrinthAsync(string query, string mcVersion, string? loader, CancellationToken ct)
+    public static async Task<List<ModHit>> SearchModrinthAsync(string query, string mcVersion, string? loader, CancellationToken ct, int offset = 0, int limit = 20)
     {
+        if (loader == "vanilla") return new List<ModHit>();
+
         // facets — JSON-массив массивов; собираем вручную для гарантированной корректности
         var facets = "[[\"versions:" + mcVersion + "\"],[\"project_type:mod\"]";
         if (!string.IsNullOrEmpty(loader) && loader != "vanilla")
             facets += ",[\"categories:" + loader.ToLowerInvariant() + "\"]";
         facets += "]";
 
-        var url = "https://api.modrinth.com/v2/search?limit=40&index=relevance" +
-                  "&query=" + Uri.EscapeDataString(query) +
-                  "&facets=" + Uri.EscapeDataString(facets);
+        var indexParam = string.IsNullOrWhiteSpace(query) ? "index=downloads" : "index=relevance";
+        var queryParam = string.IsNullOrWhiteSpace(query) ? "" : "&query=" + Uri.EscapeDataString(query.Trim());
+
+        var url = $"https://api.modrinth.com/v2/search?limit={limit}&offset={offset}&{indexParam}{queryParam}&facets={Uri.EscapeDataString(facets)}";
 
         var j = await Net.GetJsonAsync(url, ct);
         var res = new List<ModHit>();
         foreach (var h in j.Arr("hits"))
         {
-            var id = h.Str("project_id") ?? h.Str("slug") ?? "";
+            var slug = h.Str("slug") ?? "";
+            var projId = h.Str("project_id") ?? slug;
+            var id = !string.IsNullOrEmpty(slug) ? slug : projId;
             if (id.Length == 0) continue;
             res.Add(new ModHit(
                 "modrinth:" + id,
@@ -43,19 +48,31 @@ public static class Mods
                 Net.Trunc(h.Str("description") ?? "", 150),
                 FormatDownloads(h.GetLong("downloads")),
                 h.Str("icon_url") ?? "",
-                "Modrinth"));
+                "Modrinth",
+                slug));
         }
         return res;
     }
 
-    public static async Task<List<ModHit>> SearchCurseForgeAsync(string apiKey, string query, string mcVersion, CancellationToken ct)
+    public static async Task<List<ModHit>> SearchCurseForgeAsync(string apiKey, string query, string mcVersion, string? loader, CancellationToken ct, int offset = 0, int limit = 20)
     {
+        if (loader == "vanilla") return new List<ModHit>();
         if (string.IsNullOrWhiteSpace(apiKey))
             throw new InvalidOperationException("Для CurseForge укажите API-ключ в настройках (бесплатный: console.curseforge.com).");
 
+        var loaderParam = loader switch
+        {
+            "forge" => "&modLoaderType=1",
+            "fabric" => "&modLoaderType=4",
+            "quilt" => "&modLoaderType=5",
+            "neoforge" => "&modLoaderType=6",
+            _ => ""
+        };
+
         var url = "https://api.curseforge.com/v1/mods/search" +
-                  "?gameId=432&classId=6&sortField=2&sortOrder=desc&pageSize=40" +
-                  "&searchFilter=" + Uri.EscapeDataString(query) +
+                  $"?gameId=432&classId=6&sortField=2&sortOrder=desc&index={offset}&pageSize={limit}" +
+                  loaderParam +
+                  (string.IsNullOrWhiteSpace(query) ? "" : "&searchFilter=" + Uri.EscapeDataString(query.Trim())) +
                   "&gameVersion=" + Uri.EscapeDataString(mcVersion);
         var (st, j) = await SendCurseForgeAsync(HttpMethod.Get, url, apiKey, ct);
         if (st == 403)
@@ -67,6 +84,7 @@ public static class Mods
         foreach (var d in j.Arr("data"))
         {
             var id = d.GetLong("id").ToString();
+            var slug = d.Str("slug") ?? "";
             if (id == "0") continue;
             res.Add(new ModHit(
                 "curseforge:" + id,
@@ -75,7 +93,8 @@ public static class Mods
                 Net.Trunc(d.Str("summary") ?? "", 150),
                 FormatDownloads(d.GetLong("downloadCount")),
                 d.El("logo")?.Str("thumbnailUrl") ?? d.El("logo")?.Str("url") ?? "",
-                "CurseForge"));
+                "CurseForge",
+                slug));
         }
         return res;
     }
@@ -212,9 +231,57 @@ public static class Mods
             : new List<string>();
     }
 
+    public static Dictionary<string, string> GetInstalledModsMeta(Instance inst)
+    {
+        try
+        {
+            var metaFile = Path.Combine(inst.GameDir, "mods_meta.json");
+            if (File.Exists(metaFile))
+            {
+                var json = File.ReadAllText(metaFile);
+                return JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
+            }
+        }
+        catch { }
+        return new Dictionary<string, string>();
+    }
+
+    public static void RecordInstalledMod(Instance inst, string hitId, string slug, string title, string fileName)
+    {
+        try
+        {
+            var metaFile = Path.Combine(inst.GameDir, "mods_meta.json");
+            var dict = GetInstalledModsMeta(inst);
+
+            if (!string.IsNullOrEmpty(hitId)) dict[hitId.ToLowerInvariant()] = fileName;
+            if (!string.IsNullOrEmpty(slug)) dict[slug.ToLowerInvariant()] = fileName;
+            if (!string.IsNullOrEmpty(title)) dict[title.ToLowerInvariant()] = fileName;
+
+            File.WriteAllText(metaFile, JsonSerializer.Serialize(dict, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch { }
+    }
+
+    public static void RemoveInstalledModRecord(Instance inst, string fileName)
+    {
+        try
+        {
+            var metaFile = Path.Combine(inst.GameDir, "mods_meta.json");
+            if (File.Exists(metaFile))
+            {
+                var dict = GetInstalledModsMeta(inst);
+                var toRemove = dict.Where(kv => kv.Value.Equals(fileName, StringComparison.OrdinalIgnoreCase)).Select(kv => kv.Key).ToList();
+                foreach (var k in toRemove) dict.Remove(k);
+                File.WriteAllText(metaFile, JsonSerializer.Serialize(dict, new JsonSerializerOptions { WriteIndented = true }));
+            }
+        }
+        catch { }
+    }
+
     public static void Delete(Instance inst, string fileName)
     {
         var p = Path.Combine(inst.GameDir, "mods", fileName);
         if (File.Exists(p)) Net.TryDelete(p);
+        RemoveInstalledModRecord(inst, fileName);
     }
 }

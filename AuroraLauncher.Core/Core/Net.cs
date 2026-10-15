@@ -34,16 +34,48 @@ public static class Net
 
     public static HttpClient Client => Http;
 
+    /// <summary>
+    /// Преобразует URL исключительно статических игровых ресурсов (ассетов и библиотек) в зеркало BMCLAPI
+    /// при сетевых сбоях официального CDN. Манифесты и метаданные версий Mojang загружаются
+    /// ТОЛЬКО напрямую с официальных серверов Mojang во избежание подмены хешей.
+    /// </summary>
+    public static string ToMirrorUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return url;
+        // Зеркалирование разрешено только для статических файлов, чья целостность
+        // строго валидируется по официальным SHA-1 хешам из доверенного манифеста:
+        if (url.StartsWith("https://resources.download.minecraft.net/"))
+            return url.Replace("https://resources.download.minecraft.net/", "https://bmclapi2.bangbang93.com/assets/");
+        if (url.StartsWith("https://libraries.minecraft.net/"))
+            return url.Replace("https://libraries.minecraft.net/", "https://bmclapi2.bangbang93.com/maven/");
+        return url;
+    }
+
     /// <summary>Выполняет запрос и возвращает статус + распарсенный JSON (default при не-JSON).</summary>
     public static async Task<(int status, JsonElement json)> SendRawAsync(HttpRequestMessage req, CancellationToken ct)
     {
-        using (req)
-        using (var resp = await Http.SendAsync(req, ct))
+        var url = req.RequestUri?.ToString() ?? "";
+        var method = req.Method.Method;
+        try
         {
-            var body = await resp.Content.ReadAsStringAsync(ct);
-            JsonElement j = default;
-            try { using var doc = JsonDocument.Parse(body); j = doc.RootElement.Clone(); } catch { /* не JSON */ }
-            return ((int)resp.StatusCode, j);
+            using (req)
+            using (var resp = await Http.SendAsync(req, ct))
+            {
+                var body = await resp.Content.ReadAsStringAsync(ct);
+                JsonElement j = default;
+                try { using var doc = JsonDocument.Parse(body); j = doc.RootElement.Clone(); } catch { /* не JSON */ }
+                var st = (int)resp.StatusCode;
+                if (st >= 400)
+                    Ctx.Log($"[HTTP {st}] {method} {url} -> {Trunc(body, 250)}");
+                else
+                    Ctx.Log($"[HTTP {st}] {method} {url}");
+                return (st, j);
+            }
+        }
+        catch (Exception ex)
+        {
+            Ctx.Log($"[HTTP FAIL] {method} {url}: {ex.Message}");
+            throw;
         }
     }
 
@@ -60,11 +92,26 @@ public static class Net
         return SendRawAsync(req, ct);
     }
 
+    /// <summary>
+    /// Загружает JSON-документ исключительно с официального доверенного источника.
+    /// Метаданные не перенаправляются на сторонние зеркала для сохранения цепочки доверия.
+    /// </summary>
     public static async Task<JsonElement> GetJsonAsync(string url, CancellationToken ct = default)
     {
-        var (st, j) = await SendRawAsync(new HttpRequestMessage(HttpMethod.Get, url), ct);
-        if (st != 200) throw new HttpRequestException($"HTTP {st}: {url}");
-        return j;
+        for (int attempt = 1; attempt <= 3; attempt++)
+        {
+            try
+            {
+                var (st, j) = await SendRawAsync(new HttpRequestMessage(HttpMethod.Get, url), ct);
+                if (st == 200) return j;
+            }
+            catch when (attempt < 3 && !ct.IsCancellationRequested)
+            {
+                await Task.Delay(500 * attempt, ct);
+            }
+        }
+
+        throw new HttpRequestException($"Не удалось загрузить официальный JSON манифест с {url}. Проверьте подключение к сети.");
     }
 
     public static async Task<JsonElement> PostJsonAsync(string url, string json, CancellationToken ct = default)
@@ -77,7 +124,7 @@ public static class Net
     public static string Trunc(string s, int max) => string.IsNullOrEmpty(s) ? s : (s.Length <= max ? s : s[..max] + "…");
 
     /// <summary>
-    /// Скачивает файл с повторными попытками и проверкой контрольных сумм.
+    /// Скачивает файл с повторными попытками, поддержкой зеркал (обход геоблокировок) и проверкой контрольных сумм.
     /// Пишет во временный .part и перемещает на место только после успешной сверки.
     /// </summary>
     public static async Task DownloadFileAsync(string url, string destPath, string? sha1 = null, string? sha512 = null,
@@ -86,12 +133,16 @@ public static class Net
         Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
         var tmp = destPath + ".part";
         Exception? last = null;
+        var mirrorUrl = ToMirrorUrl(url);
+
         for (var attempt = 1; attempt <= 4; attempt++)
         {
+            // Начиная со 2-й попытки для ресурсов Mojang используем зеркало
+            var currentUrl = (attempt >= 2 && mirrorUrl != url) ? mirrorUrl : url;
             try
             {
                 if (File.Exists(tmp)) TryDelete(tmp);
-                using (var resp = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct))
+                using (var resp = await Http.GetAsync(currentUrl, HttpCompletionOption.ResponseHeadersRead, ct))
                 {
                     resp.EnsureSuccessStatusCode();
                     await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 16, useAsync: true))
@@ -124,7 +175,8 @@ public static class Net
                                        && attempt < 4 && !ct.IsCancellationRequested)
             {
                 last = ex;
-                await Task.Delay(TimeSpan.FromSeconds(1.5 * attempt), CancellationToken.None);
+                Ctx.Log($"[Download Retry {attempt}/4] {currentUrl} -> {ex.Message}");
+                await Task.Delay(TimeSpan.FromSeconds(1.0 * attempt), CancellationToken.None);
             }
         }
         throw last ?? new IOException("не удалось скачать " + url);

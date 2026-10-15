@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="AuroraLauncher.Pages.HomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <!-- Зелёная кнопка запуска с гарантированными высококонтрастными цветами для ЛЮБОЙ темы -->
+        <Style x:Key="MinecraftPlayButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#107C41" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#2BB561" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Height" Value="54" />
+            <Setter Property="Padding" Value="32,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Padding="{TemplateBinding Padding}">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Background" Value="#15944E" />
+                                            <Setter Target="RootBorder.BorderBrush" Value="#34D070" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Background" Value="#0D6334" />
+                                            <Setter Target="RootBorder.BorderBrush" Value="#107C41" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Background" Value="#5A7D69" />
+                                            <Setter Target="RootBorder.BorderBrush" Value="#456152" />
+                                            <Setter Target="ContentPresenter.Opacity" Value="0.65" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter x:Name="ContentPresenter"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer Padding="36,24,36,36" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="1080" Spacing="24">
+
+            <!-- Приветствие и профиль -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Style="{ThemeResource TitleTextBlockStyle}" Text="Aurora Launcher" VerticalAlignment="Center" />
+                        <Border Background="{ThemeResource AccentFillColorDefaultBrush}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                            <TextBlock Text="v1.0" FontSize="11" FontWeight="Bold" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock x:Name="HomeHeaderSubtitle" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource BodyTextBlockStyle}" Text="Выберите сборку и нажмите большую зелёную кнопку «ИГРАТЬ»!" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Статус аккаунта -->
+                <Border Grid.Column="1"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16,8">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <FontIcon x:Name="AccountIcon" Glyph="&#xE77B;" FontSize="20" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="AccountNameText" Text="Не выполнен вход" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                            <TextBlock x:Name="AccountTypeText" Text="Microsoft / Офлайн" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <Button x:Name="AccountActionBtn" Content="Войти" Click="AccountActionBtn_Click" Margin="8,0,0,0" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Hero Card: Выбранная сборка и Большая Зелёная Кнопка Запуска -->
+            <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1.5"
+                    CornerRadius="14"
+                    Padding="28">
+                <Grid RowSpacing="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Заголовок сборки с крупными иконками и бейджами -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Большая иконка сборки -->
+                        <Border x:Name="SelectedInstanceIconBorder"
+                                Width="64"
+                                Height="64"
+                                CornerRadius="12"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1.5"
+                                Margin="0,0,18,0">
+                            <TextBlock x:Name="SelectedInstanceIconText" Text="🎮" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock x:Name="SelectedInstanceBadgeText" Text="ВЫБРАННАЯ СБОРКА" Style="{ThemeResource CaptionTextBlockStyle}" FontWeight="Bold" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" CharacterSpacing="100" />
+                                <Border x:Name="ReadyBadge" Background="#1A107C41" BorderBrush="#107C41" BorderThickness="1" CornerRadius="4" Padding="6,1">
+                                    <TextBlock x:Name="ReadyBadgeText" Text="● ГОТОВА К ЗАПУСКУ" FontSize="10" FontWeight="Bold" Foreground="#107C41" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock x:Name="SelectedInstanceNameText" Text="Сборка не выбрана" FontSize="30" FontWeight="Bold" TextTrimming="CharacterEllipsis" MaxLines="1" />
+
+                            <!-- Визуальные плашки версии, загрузчика и памяти -->
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="8,3">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE71D;" FontSize="12" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                        <TextBlock x:Name="SelectedInstanceVersionBadge" Text="Minecraft" Style="{ThemeResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="8,3">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE896;" FontSize="12" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                        <TextBlock x:Name="SelectedInstanceLoaderBadge" Text="Загрузчик" Style="{ThemeResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="8,3">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE7C1;" FontSize="12" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                        <TextBlock x:Name="SelectedInstanceRamBadge" Text="RAM" Style="{ThemeResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Кнопки действий: ОГРОМНАЯ ЗЕЛЁНАЯ КНОПКА ДЛЯ ДЕТЕЙ -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="14">
+                        <Button x:Name="PlayButton"
+                                Style="{StaticResource MinecraftPlayButtonStyle}"
+                                Click="PlayButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <FontIcon Glyph="&#xE768;" FontSize="22" Foreground="White" />
+                                <TextBlock x:Name="PlayButtonText" Text="ИГРАТЬ" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Foreground="White" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="OpenFolderButton" Click="OpenFolderButton_Click" Height="54" Padding="18,0" CornerRadius="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xED25;" FontSize="18" />
+                                <TextBlock x:Name="OpenFolderButtonText" Text="Папка игры" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="ManageModsButton" Click="ManageModsButton_Click" Height="54" Padding="18,0" CornerRadius="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE896;" FontSize="18" />
+                                <TextBlock x:Name="ManageModsButtonText" Text="Моды" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="NewInstanceButton" Click="NewInstanceButton_Click" Height="54" Padding="18,0" CornerRadius="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE710;" FontSize="18" />
+                                <TextBlock x:Name="NewInstanceButtonText" Text="Создать сборку" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Индикатор прогресса запуска -->
+                    <StackPanel x:Name="ProgressSection" Grid.Row="2" Spacing="8" Visibility="Collapsed">
+                        <Grid>
+                            <TextBlock x:Name="StatusPhaseText" Text="Подготовка к запуску..." Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                            <TextBlock x:Name="StatusPercentText" Text="0%" HorizontalAlignment="Right" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </Grid>
+                        <ProgressBar x:Name="LaunchProgressBar" Height="8" CornerRadius="4" Minimum="0" Maximum="100" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- InfoBar для сообщений -->
+            <InfoBar x:Name="MessageInfoBar" IsOpen="False" IsClosable="True" />
+
+            <!-- Раздел: Установленные сборки -->
+            <StackPanel Spacing="12">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE71D;" FontSize="18" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                        <TextBlock x:Name="AllInstancesHeaderText" Text="Все доступные сборки" Style="{ThemeResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock x:Name="InstancesCountText" Text="0 сборок" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </Grid>
+
+                <StackPanel x:Name="InstancesListPanel" Spacing="8" />
+
+                <!-- Пустое состояние -->
+                <Border x:Name="EmptyInstancesBorder"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="36"
+                        Visibility="Collapsed">
+                    <StackPanel HorizontalAlignment="Center" Spacing="12">
+                        <FontIcon Glyph="&#xE71D;" FontSize="44" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+                        <TextBlock x:Name="EmptyInstancesTitle" Text="Сборок пока нет" Style="{ThemeResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" />
+                        <TextBlock x:Name="EmptyInstancesDesc" Text="Создайте новую сборку Minecraft с поддержкой Vanilla, Fabric, Forge или NeoForge." Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" TextWrapping="Wrap" />
+                        <Button x:Name="EmptyCreateInstanceBtn" Content="Создать первую сборку" Click="NewInstanceButton_Click" Style="{ThemeResource AccentButtonStyle}" HorizontalAlignment="Center" Margin="0,8,0,0" Height="42" Padding="20,0" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

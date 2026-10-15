@@ -55,6 +55,26 @@ public static class Instances
         File.WriteAllText(IndexFile, JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true }));
     }
 
+    public static void OpenFolder(Instance inst)
+    {
+        Directory.CreateDirectory(inst.GameDir);
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", inst.GameDir) { UseShellExecute = true });
+        }
+        catch { }
+    }
+
+    public static void Delete(Instance inst)
+    {
+        try
+        {
+            if (Directory.Exists(inst.Dir))
+                Directory.Delete(inst.Dir, true);
+        }
+        catch { }
+    }
+
     /// <summary>Полная подготовка инстанса к запуску: ванильные файлы, загрузчик, общие библиотеки.</summary>
     public static async Task PrepareAsync(Instance inst, IProgress<ProgressReport> prog, CancellationToken ct)
     {

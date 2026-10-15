@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="AuroraLauncher.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer Padding="36,24,36,36" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="1064" Spacing="20">
+
+            <!-- Заголовок страницы -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE713;" FontSize="28" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                        <TextBlock x:Name="SettingsPageTitle" Style="{ThemeResource TitleTextBlockStyle}" Text="Параметры и Настройки" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock x:Name="SettingsPageSubtitle" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource BodyTextBlockStyle}" Text="Конфигурация JVM, памяти, тем оформления, языка, интеграций и режима отладки" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Button x:Name="SaveSettingsTopBtn" Grid.Column="1" Click="SaveSettingsBtn_Click" Style="{ThemeResource AccentButtonStyle}" Height="40" Padding="20,0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE74E;" FontSize="14" />
+                        <TextBlock x:Name="SaveSettingsTopBtnText" Text="Сохранить всё" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- InfoBar для уведомлений -->
+            <InfoBar x:Name="SettingsInfoBar" IsOpen="False" IsClosable="True" />
+
+            <!-- Подвкладки настроек (Segmented Navigation) -->
+            <Border Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="6">
+                <Grid ColumnSpacing="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button x:Name="TabGameJvmBtn" Grid.Column="0" Click="TabGameJvmBtn_Click" HorizontalAlignment="Stretch" Height="42" Style="{ThemeResource AccentButtonStyle}" Padding="6,0">
+                        <Grid ColumnSpacing="6" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE7FC;" FontSize="15" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TabGameJvmText" Grid.Column="1" Text="🎮 Игра и JVM" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                        </Grid>
+                    </Button>
+
+                    <Button x:Name="TabAppearanceBtn" Grid.Column="1" Click="TabAppearanceBtn_Click" HorizontalAlignment="Stretch" Height="42" Padding="6,0">
+                        <Grid ColumnSpacing="6" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE790;" FontSize="15" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TabAppearanceText" Grid.Column="1" Text="🎨 Внешний вид" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                        </Grid>
+                    </Button>
+
+                    <Button x:Name="TabLanguageBtn" Grid.Column="2" Click="TabLanguageBtn_Click" HorizontalAlignment="Stretch" Height="42" Padding="6,0">
+                        <Grid ColumnSpacing="6" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE774;" FontSize="15" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TabLanguageText" Grid.Column="1" Text="🌐 Язык" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                        </Grid>
+                    </Button>
+
+                    <Button x:Name="TabAccountsApiBtn" Grid.Column="3" Click="TabAccountsApiBtn_Click" HorizontalAlignment="Stretch" Height="42" Padding="6,0">
+                        <Grid ColumnSpacing="6" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE8D7;" FontSize="15" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TabAccountsApiText" Grid.Column="1" Text="🔑 Аккаунты и API" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                        </Grid>
+                    </Button>
+
+                    <Button x:Name="TabDebugStorageBtn" Grid.Column="4" Click="TabDebugStorageBtn_Click" HorizontalAlignment="Stretch" Height="42" Padding="6,0">
+                        <Grid ColumnSpacing="6" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE756;" FontSize="15" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TabDebugStorageText" Grid.Column="1" Text="🛠️ Отладка" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                        </Grid>
+                    </Button>
+
+                    <Button x:Name="TabAboutBtn" Grid.Column="5" Click="TabAboutBtn_Click" HorizontalAlignment="Stretch" Height="42" Padding="6,0">
+                        <Grid ColumnSpacing="6" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE946;" FontSize="15" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TabAboutText" Grid.Column="1" Text="ℹ️ О лаунчере" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                        </Grid>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- ================== ПОДВКЛАДКА 1: ИГРА И JVM ================== -->
+            <StackPanel x:Name="GameJvmPanel" Spacing="16">
+                <!-- Оперативная память RAM -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="16">
+                        <Grid>
+                            <StackPanel Spacing="4">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE7C1;" FontSize="18" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="RamHeaderTitle" Text="Выделение оперативной памяти (RAM)" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                </StackPanel>
+                                <TextBlock x:Name="RamHeaderSubtitle" Text="Рекомендуется от 4096 МБ (4 ГБ) для плавной игры с модами и шейдерами." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <TextBlock x:Name="RamValueText" Text="4096 МБ (4.0 ГБ)" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        </Grid>
+
+                        <Slider x:Name="RamSlider" Minimum="1024" Maximum="16384" StepFrequency="512" Value="4096" ValueChanged="RamSlider_ValueChanged" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Разрешение окна -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="16">
+                        <Grid>
+                            <StackPanel Spacing="4">
+                                <TextBlock x:Name="CustomResolutionTitle" Text="Разрешение игрового окна" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                <TextBlock x:Name="CustomResolutionSubtitle" Text="Принудительный запуск игры с заданными параметрами ширины и высоты окна" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ToggleSwitch x:Name="CustomResolutionSwitch" HorizontalAlignment="Right" OnContent="Включено" OffContent="По умолчанию" />
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <NumberBox x:Name="WindowWidthBox" Header="Ширина (px)" Value="925" SpinButtonPlacementMode="Inline" SmallChange="50" LargeChange="100" />
+                            <NumberBox x:Name="WindowHeightBox" Grid.Column="1" Header="Высота (px)" Value="530" SpinButtonPlacementMode="Inline" SmallChange="50" LargeChange="100" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Дополнительные аргументы JVM -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="10">
+                        <TextBlock x:Name="ExtraJvmArgsTitle" Text="Дополнительные аргументы JVM (Java Flags)" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <TextBlock x:Name="ExtraJvmArgsSubtitle" Text="Тонкие флаги сборщика мусора и оптимизации памяти, например: -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        <TextBox x:Name="ExtraJvmArgsBox" PlaceholderText="-XX:+UseG1GC" Height="38" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ================== ПОДВКЛАДКА 2: ВНЕШНИЙ ВИД ================== -->
+            <StackPanel x:Name="AppearancePanel" Spacing="16" Visibility="Collapsed">
+                <!-- Тема оформления -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="4">
+                            <TextBlock x:Name="AppThemeTitle" Text="Тема оформления лаунчера" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            <TextBlock x:Name="AppThemeSubtitle" Text="Адаптивная под систему Windows, принудительная тёмная или светлая тема." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <ComboBox x:Name="AppThemeComboBox" Grid.Column="1" Width="260" Height="38" SelectionChanged="AppThemeComboBox_SelectionChanged">
+                            <ComboBoxItem x:Name="AppThemeItemDefault" Content="Как в Windows (адаптивная)" Tag="Default" />
+                            <ComboBoxItem x:Name="AppThemeItemDark" Content="Тёмная тема (Dark)" Tag="Dark" />
+                            <ComboBoxItem x:Name="AppThemeItemLight" Content="Светлая тема (Light)" Tag="Light" />
+                        </ComboBox>
+                    </Grid>
+                </Border>
+
+                <!-- Фильтр версий Minecraft -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="4">
+                            <TextBlock x:Name="FilterTitle" Text="Фильтр отображения версий Minecraft" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            <TextBlock x:Name="FilterSubtitle" Text="Какие версии игры предлагать при создании новых сборок" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Grid>
+                            <StackPanel Spacing="2">
+                                <TextBlock x:Name="ShowSnapshotsTitle" Text="Отображать экспериментальные снапшоты (Snapshots)" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                <TextBlock x:Name="ShowSnapshotsSubtitle" Text="Снапшоты могут быть нестабильными и не иметь загрузчиков модов" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ToggleSwitch x:Name="ShowSnapshotsSwitch" HorizontalAlignment="Right" OnContent="Включено" OffContent="Скрыто" />
+                        </Grid>
+
+                        <Grid>
+                            <StackPanel Spacing="2">
+                                <TextBlock x:Name="ShowOldVersionsTitle" Text="Отображать устаревшие версии (до 1.12)" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                <TextBlock x:Name="ShowOldVersionsSubtitle" Text="Старые версии Minecraft (1.11, 1.7.10, Beta, Alpha)" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ToggleSwitch x:Name="ShowOldVersionsSwitch" HorizontalAlignment="Right" OnContent="Включено" OffContent="Скрыто" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ================== ПОДВКЛАДКА: ЯЗЫК ИНТЕРФЕЙСА ================== -->
+            <StackPanel x:Name="LanguagePanel" Spacing="16" Visibility="Collapsed">
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE774;" FontSize="18" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock x:Name="LanguageHeaderTitle" Text="Язык интерфейса (Interface Language)" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            </StackPanel>
+                            <TextBlock x:Name="LanguageHeaderSubtitle" Text="Выберите язык интерфейса Aurora Launcher. Изменения применяются мгновенно без перезапуска приложения." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Grid ColumnSpacing="16" RowSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" MaxWidth="380" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <ComboBox x:Name="LanguageSelectorComboBox" HorizontalAlignment="Stretch" Height="40" SelectionChanged="LanguageSelectorComboBox_SelectionChanged" />
+
+                            <Button x:Name="ResetLanguageBtn" Grid.Column="1" Click="ResetLanguageBtn_Click" Height="40" Padding="16,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE777;" FontSize="14" />
+                                    <TextBlock x:Name="ResetLanguageBtnText" Text="Сбросить на язык системы" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <InfoBar x:Name="LanguageInfoBar" IsOpen="False" IsClosable="True" Severity="Success" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ================== ПОДВКЛАДКА 3: АККАУНТЫ И API ================== -->
+            <StackPanel x:Name="AccountsApiPanel" Spacing="16" Visibility="Collapsed">
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="4">
+                            <TextBlock x:Name="MsClientIdTitle" Text="Microsoft Azure OAuth Client ID" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            <TextBlock x:Name="MsClientIdSubtitle" Text="Идентификатор приложения (Application/Client ID) в Microsoft Entra ID (Azure Portal) для авторизации лицензий Minecraft. Если не задан здесь, лаунчер также проверяет переменную окружения AURORA_MS_CLIENT_ID." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBox x:Name="MsClientIdBox" PlaceholderText="Например: 00000000-0000-0000-0000-000000000000" Height="38" />
+                        <Button Click="HowToGetClientIdBtn_Click" Style="{ThemeResource DefaultButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE946;" FontSize="14" />
+                                <TextBlock x:Name="HowToGetClientIdBtnText" Text="Инструкция по бесплатной регистрации Client ID в Azure" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="4">
+                            <TextBlock x:Name="CurseApiKeyTitle" Text="CurseForge API Key" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            <TextBlock x:Name="CurseApiKeySubtitle" Text="Необходим для поиска и установки модов напрямую из каталога CurseForge (бесплатно на console.curseforge.com)." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <PasswordBox x:Name="CurseApiKeyBox" PlaceholderText="Вставьте персональный API-ключ CurseForge" Height="38" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ================== ПОДВКЛАДКА 4: ОТЛАДКА И ПАПКИ ================== -->
+            <StackPanel x:Name="DebugStoragePanel" Spacing="16" Visibility="Collapsed">
+                <!-- Карточка: Режим отладки -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE756;" FontSize="18" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock x:Name="DebugModeTitle" Text="Режим отладки (Живая консоль логов)" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            </StackPanel>
+                            <TextBlock x:Name="DebugModeSubtitle" Text="Открывает отдельное независимое окно консоли с просмотром всех действий, сетевых запросов, JVM-аргументов и вывода игры в реальном времени." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Button x:Name="OpenConsoleBtn" Click="OpenConsoleBtn_Click" Content="Открыть консоль" Height="38" />
+                            <ToggleSwitch x:Name="DebugModeSwitch" Toggled="DebugModeSwitch_Toggled" OnContent="Включен" OffContent="Выключен" Margin="8,0,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Папка данных -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <Grid>
+                        <StackPanel Spacing="4">
+                            <TextBlock x:Name="DataPathTitle" Text="Каталог данных AuroraLauncher" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            <TextBlock x:Name="DataPathText" Text="%APPDATA%\AuroraLauncher" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Button x:Name="OpenDataFolderBtn" Grid.Column="1" HorizontalAlignment="Right" Click="OpenDataFolderBtn_Click" Content="Открыть в проводнике" Height="38" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+
+            <!-- ================== ПОДВКЛАДКА 5: О ЛАУНЧЕРЕ И ПРАВОВАЯ ИНФОРМАЦИЯ ================== -->
+            <StackPanel x:Name="AboutLegalPanel" Spacing="16" Visibility="Collapsed">
+                <!-- Карточка: Дисклеймер Mojang и Microsoft -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource AccentFillColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="14">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE7BA;" FontSize="20" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="Официальные правовые уведомления (Mojang / Microsoft)" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        </StackPanel>
+
+                        <!-- English disclaimer -->
+                        <Border Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="ENGLISH DISCLAIMER:" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontWeight="SemiBold" />
+                                <TextBlock Text="NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT." Style="{ThemeResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Russian disclaimer -->
+                        <Border Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="РУССКИЙ ДИСКЛЕЙМЕР:" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontWeight="SemiBold" />
+                                <TextBlock Text="«ЭТО НЕ ОФИЦИАЛЬНЫЙ ПРОДУКТ MINECRAFT. ПРОЕКТ НЕ ОДОБРЕН MOJANG И MICROSOFT И НЕ СВЯЗАН С НИМИ»." Style="{ThemeResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="Minecraft является товарным знаком или зарегистрированным товарным знаком Mojang Synergies AB / Microsoft Corporation. Aurora Launcher — независимый сторонний проект для Windows с открытым исходным кодом, предназначенный исключительно для законных владельцев лицензионных копий игры."
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Карточка: Безопасность и хранение данных -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Безопасность и конфиденциальность" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="• Все чувствительные данные (токены доступа, зашифрованные сессии, персональные API-ключи) сохраняются исключительно на вашем компьютере с шифрованием через Windows Data Protection API (DPAPI). Доступ к ним ограничен вашей учетной записью Windows.&#x0a;• Пароли пользователей Microsoft никогда не передаются и не сохраняются в приложении. Авторизация происходит напрямую на официальных серверах login.microsoftonline.com / login.live.com.&#x0a;• Логи лаунчера защищены от записи конфиденциальных токенов (токены авторизации автоматически маскируются).&#x0a;• Лаунчер не осуществляет скрытую телеметрию или отправку персональных данных на сторонние серверы."
+                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Карточка: Лицензии открытых компонентов -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Сторонние библиотеки и лицензии" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="Aurora Launcher использует следующие компоненты с открытым исходным кодом:&#x0a;• Microsoft Windows App SDK (WinUI 3) — Microsoft Software License / MIT&#x0a;• System.Security.Cryptography.ProtectedData — MIT License&#x0a;• Fabric Loader &amp; Meta API — Apache License 2.0&#x0a;• NeoForge / Minecraft Forge — LGPL / GPL / Open Source&#x0a;• Modrinth API &amp; CurseForge API — Соответствующие условия использования сервисов"
+                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Карточка: Инструкция Azure App Registration -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="24">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Инструкция: Регистрация собственного Client ID в Azure Portal" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="1. Откройте портал Microsoft Entra (portal.azure.com) и перейдите в «App registrations» (Регистрация приложений).&#x0a;2. Нажмите «New registration» (Новая регистрация).&#x0a;3. В поле «Supported account types» выберите «Accounts in any organizational directory and personal Microsoft accounts» (Любые учетные записи и личные аккаунты Microsoft/Skype/Xbox).&#x0a;4. В секции «Redirect URI» выберите тип «Public client/native (mobile &amp; desktop)» и укажите URI: https://login.live.com/oauth20_desktop.srf&#x0a;5. В свойствах созданного приложения откройте «Authentication» и включите опцию «Allow public client flows» (Разрешить потоки общедоступных клиентов: Да).&#x0a;6. В разделе «API permissions» добавьте разрешение XboxLive.signin и offline_access.&#x0a;7. Скопируйте «Application (client) ID» из раздела «Overview» и вставьте в настройках лаунчера."
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Нижняя панель сохранения -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="20">
+                <Grid>
+                    <TextBlock x:Name="SaveSettingsBottomHint" Text="Не забудьте сохранить изменения после редактирования параметров" VerticalAlignment="Center" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    <Button x:Name="SaveSettingsBtn" Grid.Column="1" HorizontalAlignment="Right" Click="SaveSettingsBtn_Click" Style="{ThemeResource AccentButtonStyle}" Content="Сохранить настройки" Height="40" Padding="24,0" />
+                </Grid>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

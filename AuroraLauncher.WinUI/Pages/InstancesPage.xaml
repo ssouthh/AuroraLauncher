@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="AuroraLauncher.Pages.InstancesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer Padding="36,24,36,36" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="1064" Spacing="24">
+
+            <!-- Заголовок страницы и быстрые действия -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE71D;" FontSize="28" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                        <TextBlock x:Name="InstancesPageTitle" Style="{ThemeResource TitleTextBlockStyle}" Text="Управление сборками" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock x:Name="InstancesPageSubtitle" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource BodyTextBlockStyle}" Text="Создание сборок, обмен файлами пакетов .albuild и оптимизация хранилища" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Кнопки импорта и очистки -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button x:Name="ImportBuildBtn" Click="ImportBuildBtn_Click" Height="40" Padding="16,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE8B5;" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                            <TextBlock x:Name="ImportBuildBtnText" Text="Импорт сборки (.albuild)" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="CleanStorageBtn" Click="CleanStorageBtn_Click" Height="40" Padding="16,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="#FF9800" />
+                            <TextBlock x:Name="CleanStorageBtnText" Text="Очистить мусор" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- InfoBar для уведомлений -->
+            <InfoBar x:Name="InstancesInfoBar" IsOpen="False" IsClosable="True" />
+
+            <!-- Карточка создания новой сборки -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="24">
+                <StackPanel Spacing="18">
+                    <Grid>
+                        <StackPanel Spacing="2">
+                            <TextBlock x:Name="CreateInstanceTitle" Text="Создать новую сборку" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            <TextBlock x:Name="CreateInstanceSubtitle" Text="Автоматически выбирает самую актуальную стабильную версию Minecraft" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ProgressRing x:Name="VersionsLoadingRing" Width="20" Height="20" HorizontalAlignment="Right" IsActive="True" />
+                    </Grid>
+
+                    <Grid ColumnSpacing="16" RowSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Название -->
+                        <StackPanel Spacing="6">
+                            <TextBlock x:Name="InstanceNameLabel" Text="Название сборки" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBox x:Name="InstanceNameTextBox" PlaceholderText="Например, Мой мир 1.21.4" Height="40" />
+                        </StackPanel>
+
+                        <!-- Версия игры (По умолчанию ВСЕГДА самая новая!) -->
+                        <StackPanel Grid.Column="1" Spacing="6">
+                            <TextBlock x:Name="GameVersionLabel" Text="Версия Minecraft" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <ComboBox x:Name="GameVersionComboBox" PlaceholderText="Загрузка версий..." HorizontalAlignment="Stretch" Height="40" SelectionChanged="GameVersionComboBox_SelectionChanged" />
+                        </StackPanel>
+
+                        <!-- Загрузчик -->
+                        <StackPanel Grid.Row="1" Spacing="6">
+                            <TextBlock x:Name="LoaderKindLabel" Text="Загрузчик модов" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <ComboBox x:Name="LoaderKindComboBox" HorizontalAlignment="Stretch" Height="40" SelectionChanged="LoaderKindComboBox_SelectionChanged" />
+                        </StackPanel>
+
+                        <!-- Правая колонка 2 строки: либо версия загрузчика, либо инфо-баннер ваниллы (заполняет всё пространство гармонично!) -->
+                        <Grid Grid.Row="1" Grid.Column="1">
+                            <!-- Панель версии загрузчика (Fabric, Forge, NeoForge, Quilt) -->
+                            <StackPanel x:Name="LoaderVersionPanel" Spacing="6" Visibility="Collapsed">
+                                <TextBlock x:Name="LoaderVersionLabel" Text="Версия загрузчика" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <ComboBox x:Name="LoaderVersionComboBox" PlaceholderText="Последняя рекомендуемая" HorizontalAlignment="Stretch" Height="40" />
+                            </StackPanel>
+
+                            <!-- Инфо-баннер для Ваниллы (вместо пустой дыры) -->
+                            <Border x:Name="VanillaInfoBorder"
+                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="14,8"
+                                    VerticalAlignment="Bottom"
+                                    Height="40">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <FontIcon Glyph="&#xE73E;" FontSize="14" Foreground="#107C41" />
+                                    <TextBlock x:Name="VanillaInfoText" Text="Официальная ванильная версия (максимальная стабильность)" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+
+                    <!-- Прогресс создания -->
+                    <StackPanel x:Name="CreationProgressSection" Spacing="8" Visibility="Collapsed">
+                        <Grid>
+                            <TextBlock x:Name="CreationStatusText" Text="Загрузка файлов игры..." Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                            <TextBlock x:Name="CreationPercentText" Text="0%" HorizontalAlignment="Right" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </Grid>
+                        <ProgressBar x:Name="CreationProgressBar" Height="6" Minimum="0" Maximum="100" />
+                    </StackPanel>
+
+                    <!-- Кнопка создания -->
+                    <StackPanel Orientation="Horizontal" Spacing="14">
+                        <Button x:Name="CreateInstanceButton" Click="CreateInstanceButton_Click" Style="{ThemeResource AccentButtonStyle}" Height="40" Padding="24,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE710;" FontSize="14" />
+                                <TextBlock x:Name="CreateInstanceBtnText" Text="Создать и подготовить сборку" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <TextBlock x:Name="VersionsLoadingText" Text="Загрузка списка версий с Mojang..." VerticalAlignment="Center" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Список созданных сборок -->
+            <StackPanel Spacing="12">
+                <Grid>
+                    <TextBlock x:Name="AllInstancesHeaderTitle" Text="Все созданные сборки" Style="{ThemeResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="InstancesCountHeader" Text="0 сборок" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </Grid>
+
+                <StackPanel x:Name="AllInstancesPanel" Spacing="8" />
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>
