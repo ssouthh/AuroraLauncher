@@ -1,17 +1,3 @@
-AURORA LAUNCHER - LICENSE & LEGAL INFORMATION
-==============================================
-
-[PENDING OWNER SELECTION / НА СТАДИИ ВЫБОРА ВЛАДЕЛЬЦЕМ ПРОЕКТА]
-
-Окончательный выбор открытой или проприетарной лицензии для Aurora Launcher
-находится на рассмотрении и ожидает подтверждения владельцем репозитория.
-
-Ниже представлен проект предварительной лицензии (MIT License Draft), а также
-информация о доступных вариантах лицензирования (MIT, GPL-3.0, Apache-2.0, All Rights Reserved):
-
---------------------------------------------------------------------------------
-DRAFT / ПРЕДВАРИТЕЛЬНЫЙ ТЕКСТ ЛИЦЕНЗИИ (MIT):
-
 Copyright (c) 2026 Aurora Launcher Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
